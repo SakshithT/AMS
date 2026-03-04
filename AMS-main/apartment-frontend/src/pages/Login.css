@@ -1,0 +1,379 @@
+/* =====================
+   SPOOKY LOGIN FORM CSS
+   ===================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Full-page background */
+.spooky-wrapper {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #e8e4f0 0%, #f5f0ff 50%, #ede8f8 100%);
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Floating ghost background particles */
+.bg-particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.particle {
+  position: absolute;
+  font-size: 24px;
+  opacity: 0.12;
+  animation: floatParticle linear infinite;
+}
+
+.particle-1 {
+  left: 5%;
+  animation-duration: 12s;
+  animation-delay: 0s;
+  font-size: 20px;
+}
+
+.particle-2 {
+  left: 15%;
+  animation-duration: 15s;
+  animation-delay: -4s;
+  font-size: 28px;
+}
+
+.particle-3 {
+  left: 27%;
+  animation-duration: 11s;
+  animation-delay: -2s;
+  font-size: 18px;
+}
+
+.particle-4 {
+  left: 40%;
+  animation-duration: 14s;
+  animation-delay: -7s;
+  font-size: 32px;
+}
+
+.particle-5 {
+  left: 55%;
+  animation-duration: 13s;
+  animation-delay: -1s;
+  font-size: 22px;
+}
+
+.particle-6 {
+  left: 68%;
+  animation-duration: 10s;
+  animation-delay: -5s;
+  font-size: 26px;
+}
+
+.particle-7 {
+  left: 80%;
+  animation-duration: 16s;
+  animation-delay: -3s;
+  font-size: 20px;
+}
+
+.particle-8 {
+  left: 92%;
+  animation-duration: 12s;
+  animation-delay: -8s;
+  font-size: 24px;
+}
+
+@keyframes floatParticle {
+  0% {
+    transform: translateY(110vh) rotate(0deg);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.12;
+  }
+
+  90% {
+    opacity: 0.12;
+  }
+
+  100% {
+    transform: translateY(-10vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Main Container */
+.spooky-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  z-index: 1;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(100, 80, 160, 0.15), 0 4px 20px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  max-width: 820px;
+  width: 90%;
+  min-height: 440px;
+  animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardAppear {
+  from {
+    transform: scale(0.92) translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ==============================
+   IMAGE PANEL (Left side)
+   ============================== */
+.image-panel {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  width: 400px;
+  min-width: 350px;
+  min-height: 480px;
+  border-right: 1px solid #e2d9f3;
+}
+
+.image-panel video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.6s ease;
+}
+
+/* ==============================
+   LOGIN PANEL (Right side)
+   ============================== */
+.login-panel {
+  flex: 1;
+  padding: 50px 45px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-panel h2 {
+  font-size: 2em;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 6px;
+}
+
+.login-panel p {
+  color: #a0a0b0;
+  font-size: 14px;
+  margin: 0 0 30px;
+}
+
+/* Form */
+.spooky-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.spooky-input {
+  padding: 14px 16px;
+  border: 1.5px solid #e2d9f3;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  background: #fafafa;
+  transition: all 0.25s ease;
+  font-family: inherit;
+}
+
+.spooky-input:focus {
+  border-color: #8b5cf6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+}
+
+.input-error {
+  border-color: #f87171 !important;
+  background: #fff5f5;
+  animation: inputShake 0.4s ease-in-out;
+}
+
+.input-success {
+  border-color: #34d399 !important;
+  background: #f0fff4;
+}
+
+@keyframes inputShake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-6px);
+  }
+
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+/* Submit Button */
+.spooky-btn {
+  padding: 15px;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+
+.spooky-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(109, 40, 217, 0.35);
+  background: linear-gradient(135deg, #6d28d9, #5b21b6);
+}
+
+.spooky-btn:active {
+  transform: scale(0.98);
+}
+
+.spooky-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-error {
+  background: linear-gradient(135deg, #f87171, #ef4444) !important;
+  animation: btnPulseRed 0.5s ease-in-out;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #34d399, #10b981) !important;
+}
+
+@keyframes btnPulseRed {
+
+  0%,
+  100% {
+    box-shadow: none;
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(248, 113, 113, 0.5);
+  }
+}
+
+/* Status Message */
+.status-message {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  animation: slideIn 0.3s ease;
+}
+
+.msg-error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.msg-success {
+  background: #f0fff4;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Bottom Links */
+.spooky-links {
+  margin-top: 22px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.spooky-links span {
+  color: #8b5cf6;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.spooky-links span:hover {
+  color: #6d28d9;
+  text-decoration: underline;
+}
+
+/* ==============================
+   RESPONSIVE
+   ============================== */
+@media (max-width: 700px) {
+  .spooky-container {
+    flex-direction: column;
+    max-width: 95%;
+  }
+
+  .image-panel {
+    width: 100%;
+    min-height: 250px;
+    border-right: none;
+    border-bottom: 1px solid #e2d9f3;
+  }
+
+  .login-panel {
+    padding: 30px 25px;
+  }
+}
