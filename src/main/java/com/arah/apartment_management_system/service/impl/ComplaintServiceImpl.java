@@ -19,6 +19,7 @@ import com.arah.apartment_management_system.enums.ComplaintStatus;
 import com.arah.apartment_management_system.exception.ResourceNotFoundException;
 import com.arah.apartment_management_system.repository.AllotmentRepository;
 import com.arah.apartment_management_system.repository.ComplaintRepository;
+import com.arah.apartment_management_system.repository.UserRepository;
 import com.arah.apartment_management_system.service.ComplaintService;
 import com.arah.apartment_management_system.service.UserService;
 
@@ -31,6 +32,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     private final ComplaintRepository complaintRepository;
     private final AllotmentRepository allotmentRepository;
+    private final UserRepository userRepository;
     private final UserService userService;
 
     @Override
@@ -86,6 +88,20 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
+    public ComplaintResponseDTO assignStaff(Long complaintId, Long staffId) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
+
+        User staff = userRepository.findById(staffId)
+                .orElseThrow(() -> new ResourceNotFoundException("Staff member not found"));
+
+        complaint.setAssignedStaff(staff);
+        complaint.setStatus(ComplaintStatus.IN_PROGRESS);
+
+        return mapToDTO(complaintRepository.save(complaint));
+    }
+
+    @Override
     public void deleteComplaint(Long id) {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
@@ -104,6 +120,10 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .username(complaint.getUser() != null ? complaint.getUser().getUsername() : null)
                 .flatId(complaint.getFlat() != null ? complaint.getFlat().getId() : null)
                 .flatNumber(complaint.getFlat() != null ? complaint.getFlat().getFlatNumber() : null)
+                .staffId(complaint.getAssignedStaff() != null ? complaint.getAssignedStaff().getId() : null)
+                .staffName(complaint.getAssignedStaff() != null ? complaint.getAssignedStaff().getUsername() : null)
+                .staffDesignation(
+                        complaint.getAssignedStaff() != null ? complaint.getAssignedStaff().getDesignation() : null)
                 .createdAt(complaint.getCreatedAt())
                 .resolvedAt(complaint.getResolvedAt())
                 .build();

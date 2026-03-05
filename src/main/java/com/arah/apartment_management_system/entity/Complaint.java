@@ -44,6 +44,10 @@ public class Complaint {
     @JoinColumn(name = "flat_id")
     private Flat flat;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_staff_id")
+    private User assignedStaff;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime resolvedAt;

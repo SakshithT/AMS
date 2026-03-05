@@ -20,6 +20,9 @@ public interface ComplaintService {
     // Admin: update complaint status
     ComplaintResponseDTO updateStatus(Long id, ComplaintStatus status);
 
+    // Admin: assign staff to a complaint (also sets status to IN_PROGRESS)
+    ComplaintResponseDTO assignStaff(Long complaintId, Long staffId);
+
     // Admin: delete complaint
     void deleteComplaint(Long id);
 }

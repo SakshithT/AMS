@@ -38,6 +38,14 @@ public class ComplaintController {
         return ApiResponse.success("Status updated", complaintService.updateStatus(id, status));
     }
 
+    @PutMapping("/api/admin/complaints/{id}/assign-staff")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<ComplaintResponseDTO> assignStaff(
+            @PathVariable Long id,
+            @RequestParam Long staffId) {
+        return ApiResponse.success("Staff assigned successfully", complaintService.assignStaff(id, staffId));
+    }
+
     @DeleteMapping("/api/admin/complaints/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<String> deleteComplaint(@PathVariable Long id) {

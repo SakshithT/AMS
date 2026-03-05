@@ -23,6 +23,9 @@ public class ComplaintResponseDTO {
     private String username;
     private Long flatId;
     private String flatNumber;
+    private Long staffId;
+    private String staffName;
+    private String staffDesignation;
     private LocalDateTime createdAt;
     private LocalDateTime resolvedAt;
 }
