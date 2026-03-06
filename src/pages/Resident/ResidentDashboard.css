@@ -543,7 +543,7 @@
 }
 
 .profile-header {
-  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
   padding: 40px;
   display: flex;
   align-items: center;
@@ -556,7 +556,7 @@
   height: 100px;
   border-radius: 50%;
   background: white;
-  color: #e67e22;
+  color: #3498db;
   display: flex;
   align-items: center;
   justify-content: center;

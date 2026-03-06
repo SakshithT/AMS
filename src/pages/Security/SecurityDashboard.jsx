@@ -1,7 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosConfig";
-import "./SecurityDashboard.css";
+import "../../components/Admin/AdminShared.css";
+
+// ── SVG Icons ─────────────────────────────────────────────
+const I = ({ d, size = 18, stroke = 2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">
+    {typeof d === 'string' ? <path d={d} /> : d}
+  </svg>
+);
+const UserIconS = () => <I d={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>} />;
+const GridIconS = () => <I d={<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></>} />;
+const PersonWalk = () => <I d={<><circle cx="12" cy="4" r="2" /><path d="m9 11 3-4 3 4" /><path d="m7 21 5-10 5 10" /></>} />;
+const BoxIconS = () => <I d={<><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /></>} />;
+const CarIconS = () => <I d={<><rect x="1" y="3" width="15" height="13" rx="2" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></>} />;
+const ShieldIconS = () => <I d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
+const LogoutIconS = () => <I d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" size={16} />;
+const MenuIconS = () => <I d={<><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></>} />;
 
 function SecurityDashboard() {
   const [activeView, setActiveView] = useState("profile");
@@ -177,11 +192,11 @@ function SecurityDashboard() {
   };
 
   const sidebarItems = [
-    { id: "profile", label: "My Profile", icon: "👤" },
-    { id: "overview", label: "Overview", icon: "📊" },
-    { id: "visitors", label: "Visitors", icon: "🚶" },
-    { id: "parcels", label: "Parcels", icon: "📦" },
-    { id: "vehicles", label: "Vehicles", icon: "🚗" }
+    { id: "profile", label: "My Profile", icon: <UserIconS /> },
+    { id: "overview", label: "Overview", icon: <GridIconS /> },
+    { id: "visitors", label: "Visitors", icon: <PersonWalk /> },
+    { id: "parcels", label: "Parcels", icon: <BoxIconS /> },
+    { id: "vehicles", label: "Vehicles", icon: <CarIconS /> },
   ];
 
   const getStatusBadge = (status) => {
@@ -209,7 +224,7 @@ function SecurityDashboard() {
   }
 
   return (
-    <div className={`security-dashboard ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+    <div className="dashboard-layout">
       {/* TOAST NOTIFICATION */}
       {toast.show && (
         <div className={`toast-notification ${toast.type === "error" ? "toast-error" : "toast-success"}`}>
@@ -219,10 +234,15 @@ function SecurityDashboard() {
       {/* SIDEBAR */}
       <aside className={`security-sidebar ${isSidebarOpen ? '' : 'collapsed'}`}>
         <div className="sidebar-header">
-          <div className="security-logo">🛡️</div>
-          {isSidebarOpen && <div className="security-title">Security Panel</div>}
+          <div className="sidebar-brand-icon"><ShieldIconS /></div>
+          {isSidebarOpen && (
+            <div className="sidebar-brand-text">
+              <div className="brand-title">AMS Portal</div>
+              <div className="brand-sub">Security Panel</div>
+            </div>
+          )}
           <button className="menu-toggle" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            {isSidebarOpen ? '☰' : '☰'}
+            <MenuIconS />
           </button>
         </div>
         <nav className="sidebar-nav">
@@ -238,21 +258,23 @@ function SecurityDashboard() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div className="security-user-info">
+          <div className="sidebar-user-card">
             <div className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</div>
-            <div className="user-details">
-              <span className="user-name">{user?.username}</span>
-              <span className="user-role">Security</span>
-            </div>
+            {isSidebarOpen && (
+              <div className="user-info">
+                <div className="user-name">{user?.username}</div>
+                <div className="user-role">Security</div>
+              </div>
+            )}
           </div>
           <button className="btn-logout" onClick={handleLogout}>
-            <span>🚪</span> Logout
+            <LogoutIconS /> {isSidebarOpen && 'Logout'}
           </button>
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className={`main-content ${isSidebarOpen ? '' : 'expanded'}`}>
+      <main className={`main-wrapper ${isSidebarOpen ? '' : 'expanded'}`}>
         {/* PROFILE SECTION - Shown immediately on login */}
         {activeView === "profile" && (
           <div className="fade-in-up">

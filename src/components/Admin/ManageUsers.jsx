@@ -27,6 +27,7 @@ export default function ManageUsers() {
   });
   const [availableFlats, setAvailableFlats] = useState([]);
   const [activeTab, setActiveTab] = useState("all"); // "all", "residents", "requests"
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadUsers();
@@ -210,7 +211,19 @@ export default function ManageUsers() {
   const residentUsers = users.filter(u => getRole(u) === "ROLE_RESIDENT" && u.status !== "DEACTIVATED" && u.status !== "PENDING");
   const pendingUsers = users.filter(u => u.status === "DEACTIVATED" || u.status === "PENDING");
 
-  const displayedUsers = activeTab === "all" ? allActiveUsers : (activeTab === "residents" ? residentUsers : pendingUsers);
+  const matchSearch = (u) => {
+    const q = searchQuery.toLowerCase();
+    const matchName = (u.username && u.username.toLowerCase().includes(q)) ||
+      (u.fullName && u.fullName.toLowerCase().includes(q));
+
+    if (activeTab === "residents") {
+      return matchName || (u.flatNumber && u.flatNumber.toString().includes(q));
+    }
+    return matchName;
+  };
+
+  const displayedUsers = (activeTab === "all" ? allActiveUsers : (activeTab === "residents" ? residentUsers : pendingUsers))
+    .filter(u => matchSearch(u));
 
   return (
     <div className="fade-in-up">
@@ -219,7 +232,7 @@ export default function ManageUsers() {
           <h1 className="page-title">Manage Users</h1>
           <p className="page-subtitle">Create and manage admin & security users</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { if (!showForm) { resetForm(); } setShowForm(!showForm); }}>
+        <button className="btn btn-gradient-blue" onClick={() => { if (!showForm) { resetForm(); } setShowForm(!showForm); }}>
           {showForm ? '✕ Close Form' : (isEditing ? '✏️ Editing User' : '+ Create User')}
         </button>
       </div>
@@ -332,9 +345,9 @@ export default function ManageUsers() {
 
               <div className="inline-form-actions">
                 <button type="button" cl
-                
-                
-                assName="inline-btn inline-btn-cancel" onClick={() => { resetForm(); setShowForm(false); }}>
+
+
+                  assName="inline-btn inline-btn-cancel" onClick={() => { resetForm(); setShowForm(false); }}>
                   Cancel
                 </button>
                 <button type="submit" className="inline-btn inline-btn-submit btn-gradient-blue" disabled={submitting}>
@@ -350,17 +363,30 @@ export default function ManageUsers() {
         <div className="success-message">{successMessage}</div>
       )}
 
-        <div className="admin-card mt-0">
-        <div className="action-group tab-container">
-          <button className={`btn ${activeTab === "all" ? "btn-primary" : "btn-secondary"}`} onClick={() => setActiveTab("all")}>
-            All Users ({allActiveUsers.length})
-          </button>
-          <button className={`btn ${activeTab === "residents" ? "btn-primary" : "btn-secondary"}`} onClick={() => setActiveTab("residents")}>
-            Residents ({residentUsers.length})
-          </button>
-          <button className={`btn ${activeTab === "requests" ? "btn-primary" : "btn-secondary"}`} onClick={() => setActiveTab("requests")}>
-            Approve Requests ({pendingUsers.length})
-          </button>
+      <div className="admin-card mt-0">
+        <div className="action-group tab-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button className={`btn ${activeTab === "all" ? "btn-primary" : "btn-secondary"}`} onClick={() => setActiveTab("all")}>
+              All Users ({allActiveUsers.length})
+            </button>
+            <button className={`btn ${activeTab === "residents" ? "btn-primary" : "btn-secondary"}`} onClick={() => setActiveTab("residents")}>
+              Residents ({residentUsers.length})
+            </button>
+            <button className={`btn ${activeTab === "requests" ? "btn-primary" : "btn-secondary"}`} onClick={() => setActiveTab("requests")}>
+              Approve Requests ({pendingUsers.length})
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', flex: '1', minWidth: '300px', justifyContent: 'flex-end' }}>
+            <input
+              type="text"
+              placeholder={activeTab === "residents" ? "Search by name, username or flat..." : "Search by name or username..."}
+              className="inline-form-input"
+              style={{ maxWidth: '300px' }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
 
         {/* Users Grid - Card Format (Full Details) */}
@@ -371,7 +397,7 @@ export default function ManageUsers() {
             displayedUsers.map((user) => {
               const isDeactivated = user.status === "DEACTIVATED" || user.status === "PENDING";
               const userRole = getRole(user);
-              
+
               // Determine avatar color based on role
               const getAvatarGradient = () => {
                 if (userRole === "ROLE_ADMIN") return "linear-gradient(135deg, #9b59b6, #8e44ad)";
@@ -393,7 +419,7 @@ export default function ManageUsers() {
                       {user.status || "ACTIVE"}
                     </span>
                   </div>
-                  
+
                   <div className="user-card-compact-details">
                     <div><strong>Role:</strong> <span>{userRole === "ROLE_ADMIN" ? "Admin" : userRole === "ROLE_SECURITY" ? "Security" : "Resident"}</span></div>
                     <div><strong>Phone:</strong> <span>{user.contactNumber || "N/A"}</span></div>
@@ -404,7 +430,7 @@ export default function ManageUsers() {
                       </>
                     )}
                   </div>
-                  
+
                   <div className="user-card-compact-actions">
                     {!isDeactivated ? (
                       <>

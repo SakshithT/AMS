@@ -3,146 +3,177 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosConfig";
 import "./Login.css";
 
-// Ghost states: 'idle' | 'typing' | 'error' | 'success'
+const BuildingIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="2" width="16" height="20" rx="2" />
+    <path d="M9 22V12h6v10" />
+    <rect x="8" y="6" width="3" height="3" rx="0.5" />
+    <rect x="13" y="6" width="3" height="3" rx="0.5" />
+  </svg>
+);
+
+const UserIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
+
+const BellIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const ArrowIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </svg>
+);
+
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [ghostState, setGhostState] = useState("idle");
+  const [status, setStatus] = useState("idle"); // idle | loading | error | success
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [failCount, setFailCount] = useState(0);
   const navigate = useNavigate();
-
-  const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
-    if (ghostState !== "error" && ghostState !== "success") {
-      setGhostState(e.target.value.length > 0 ? "typing" : "idle");
-    }
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setStatus("loading");
     setMessage("");
     try {
-      const response = await axiosInstance.post("/auth/login", {
-        username,
-        password,
-      });
-
+      const response = await axiosInstance.post("/auth/login", { username, password });
       const token = response.data.data;
       localStorage.setItem("token", token);
-      setFailCount(0);
-      setGhostState("success");
-      setMessage("Login Successful! 🎉");
-
+      setStatus("success");
+      setMessage("Login successful! Redirecting…");
       setTimeout(() => {
         const payload = JSON.parse(atob(token.split(".")[1]));
         const role = payload.role;
         if (role === "ROLE_ADMIN") navigate("/Admin/AdminDashboard");
         else if (role === "ROLE_SECURITY") navigate("/Security/SecurityDashboard");
         else navigate("/Resident/ResidentDashboard");
-      }, 1500);
+      }, 1200);
     } catch (error) {
-      setFailCount(prev => prev + 1);
-      setGhostState("error");
-      setMessage(error.response?.data?.message || "Wrong Password! Try again.");
-      setTimeout(() => {
-        setGhostState("idle");
-        setMessage("");
-      }, 3000);
-    } finally {
-      setLoading(false);
+      setStatus("error");
+      setMessage(error.response?.data?.message || "Invalid credentials. Please try again.");
+      setTimeout(() => { setStatus("idle"); setMessage(""); }, 3500);
     }
   };
 
-  const getVideoSource = () => {
-    if (ghostState === "success") return "/correct.mp4";
-    if (ghostState === "error") {
-      return failCount === 1 ? "/wrong.mp4" : "/againwrong.mp4";
-    }
-    return "/1026.mp4";
-  };
-
-  const getGhostSpeech = () => {
-    if (ghostState === "error") return "Wrong Password!";
-    if (ghostState === "success") return "Welcome! 🎃";
-    if (ghostState === "typing") return "Hmm...";
-    return "Sign in!";
-  };
+  const inputClass = `auth-input ${status === "error" ? "is-error" : ""} ${status === "success" ? "is-success" : ""}`;
+  const btnClass = `auth-btn ${status === "loading" ? "btn-loading" : ""} ${status === "error" ? "btn-err" : ""} ${status === "success" ? "btn-ok" : ""}`;
 
   return (
-    <div className="spooky-wrapper">
-      {/* Background floating particles */}
-      <div className="bg-particles">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className={`particle particle-${i + 1}`}>👻</div>
-        ))}
-      </div>
-
-      <div className="spooky-container">
-        {/* Ghost Section */}
-        <div className="image-panel">
-          <video
-            key={getVideoSource()} /* Force video reload when source changes */
-            autoPlay
-            loop={ghostState === "idle" || ghostState === "typing"}
-            muted
-            playsInline
-          >
-            <source src={getVideoSource()} type="video/mp4" />
-          </video>
+    <div className="auth-page">
+      {/* Left brand panel */}
+      <div className="auth-brand-panel">
+        <div className="brand-logo-wrap">
+          <div className="brand-icon-box"><BuildingIcon /></div>
+          <div>
+            <div className="brand-name">AMS Portal</div>
+            <div className="brand-tagline">Apartment Management System</div>
+          </div>
         </div>
 
-        {/* Login Panel */}
-        <div className="login-panel">
-          <h2>Sign In</h2>
-          <p>Apartment Management System</p>
+        <div className="auth-brand-headline">
+          <h1>Manage your<br /><span>community</span><br />smarter.</h1>
+          <p>A unified platform for residents, security and administrators to manage everything seamlessly.</p>
+        </div>
 
-          <form onSubmit={handleLogin} className="spooky-form">
-            <div className="field-group">
+        <div className="auth-features">
+          <div className="auth-feature-item">
+            <div className="auth-feature-icon"><ShieldIcon /></div>
+            <span className="auth-feature-text">Bank-level security &amp; role access</span>
+          </div>
+          <div className="auth-feature-item">
+            <div className="auth-feature-icon"><BellIcon /></div>
+            <span className="auth-feature-text">Real-time notices &amp; alerts</span>
+          </div>
+          <div className="auth-feature-item">
+            <div className="auth-feature-icon"><CheckIcon /></div>
+            <span className="auth-feature-text">Complaints, bookings &amp; maintenance</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Right form panel */}
+      <div className="auth-form-panel">
+        <div className="auth-form-box">
+          <div className="auth-form-header">
+            <h2>Welcome back</h2>
+            <p>Sign in to your AMS account to continue</p>
+          </div>
+
+          <form onSubmit={handleLogin}>
+            <div className="auth-field">
               <label>Username</label>
-              <input
-                type="text"
-                placeholder="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className={`spooky-input ${ghostState === "error" ? "input-error" : ""} ${ghostState === "success" ? "input-success" : ""}`}
-                required
-              />
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon"><UserIcon /></span>
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  autoComplete="username"
+                />
+              </div>
             </div>
 
-            <div className="field-group">
+            <div className="auth-field">
               <label>Password</label>
-              <input
-                type="password"
-                placeholder="••••••"
-                value={password}
-                onChange={handlePasswordChange}
-                className={`spooky-input ${ghostState === "error" ? "input-error" : ""} ${ghostState === "success" ? "input-success" : ""}`}
-                required
-              />
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon"><LockIcon /></span>
+                <input
+                  type="password"
+                  className={inputClass}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
             </div>
 
-            <button
-              type="submit"
-              className={`spooky-btn ${ghostState === "success" ? "btn-success" : ""} ${ghostState === "error" ? "btn-error" : ""}`}
-              disabled={loading}
-            >
-              {loading ? "Checking..." : "Sign In"}
+            <button type="submit" className={btnClass} disabled={status === "loading" || status === "success"}>
+              {status === "loading" ? "Signing in…" : status === "success" ? "Success!" : <>Sign In <ArrowIcon /></>}
             </button>
           </form>
 
-          {/* Status Message */}
           {message && (
-            <div className={`status-message ${ghostState === "error" ? "msg-error" : "msg-success"}`}>
+            <div className={`auth-message ${status === "error" ? "msg-err" : "msg-ok"}`}>
               {message}
             </div>
           )}
 
-          <div className="spooky-links">
-            <span onClick={() => navigate("/forgot-password")}>Forgot Password?</span>
-            <span onClick={() => navigate("/signup")}>New Resident?</span>
+          <div className="auth-links">
+            <button className="auth-link" onClick={() => navigate("/forgot-password")}>Forgot Password?</button>
+            <button className="auth-link" onClick={() => navigate("/signup")}>New Resident? Register</button>
           </div>
         </div>
       </div>

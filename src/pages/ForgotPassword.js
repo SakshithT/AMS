@@ -1,12 +1,37 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosConfig";
-import "./ForgotPassword.css";
+import "./Login.css"; // Reuse shared auth styles
+
+const BuildingIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="2" width="16" height="20" rx="2" />
+    <path d="M9 22V12h6v10" />
+    <rect x="8" y="6" width="3" height="3" rx="0.5" />
+    <rect x="13" y="6" width="3" height="3" rx="0.5" />
+  </svg>
+);
+
+const MailIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+  </svg>
+);
+
+const ArrowIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </svg>
+);
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,35 +63,55 @@ function ForgotPassword() {
   };
 
   return (
-    <div className="forgot-password-container">
-      <div className="forgot-password-card">
-        <h2>Forgot Password</h2>
-        <p className="forgot-password-subtitle">
-          Enter your email address and we'll send you a link to reset your password.
-        </p>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Email Address</label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-            />
+    <div className="auth-page">
+      <div className="auth-brand-panel">
+        <div className="brand-logo-wrap">
+          <div className="brand-icon-box"><BuildingIcon /></div>
+          <div>
+            <div className="brand-name">AMS Portal</div>
+            <div className="brand-tagline">Apartment Management System</div>
+          </div>
+        </div>
+        <div className="auth-brand-headline">
+          <h1>Recover your<br /><span>account</span></h1>
+          <p>Don't worry, we'll help you get back into your account securely.</p>
+        </div>
+      </div>
+
+      <div className="auth-form-panel">
+        <div className="auth-form-box">
+          <div className="auth-form-header">
+            <h2>Forgot Password</h2>
+            <p>Enter your email address to receive a reset link</p>
           </div>
 
-          {error && <p className="error-message">{error}</p>}
-          {message && <p className="success-message">{message}</p>}
+          <form onSubmit={handleSubmit}>
+            <div className="auth-field">
+              <label>Email Address</label>
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon"><MailIcon /></span>
+                <input
+                  type="email"
+                  className="auth-input"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
-          <button type="submit" className="forgot-btn" disabled={loading}>
-            {loading ? "Sending..." : "Send Reset Link"}
-          </button>
-        </form>
+            {error && <div className="auth-message msg-err" style={{ marginBottom: 12 }}>{error}</div>}
+            {message && <div className="auth-message msg-ok" style={{ marginBottom: 12 }}>{message}</div>}
 
-        <div className="back-to-login">
-          <a href="/">← Back to Login</a>
+            <button type="submit" className="auth-btn" disabled={loading}>
+              {loading ? "Sending..." : <>Send Reset Link <ArrowIcon /></>}
+            </button>
+          </form>
+
+          <div className="auth-links">
+            <button className="auth-link" onClick={() => navigate("/")}>← Back to Sign In</button>
+          </div>
         </div>
       </div>
     </div>

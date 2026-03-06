@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import axiosInstance from "../../utils/axiosConfig";
-import "./AdminDashboard.css";
 import "../../components/Admin/AdminShared.css";
 
 import ManageUsers from "../../components/Admin/ManageUsers";
@@ -10,20 +9,38 @@ import ManageMaintenance from "../../components/Admin/ManageMaintenance";
 import ManageComplaints from "../../components/Admin/ManageComplaints";
 import ManagePolls from "../../components/Admin/Polls";
 import ManageFacilities from "../../components/Admin/ManageFacilities";
+import ManageClubhouse from "../../components/Admin/ManageClubhouse";
+
+// ── SVG Icons ─────────────────────────────────────────────
+const I = ({ d, size = 18, stroke = 2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">
+    {typeof d === 'string' ? <path d={d} /> : d}
+  </svg>
+);
+const UserIcon = () => <I d={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>} />;
+const GridIcon = () => <I d={<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></>} />;
+const BellIcon = () => <I d={<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>} />;
+const UsersIcon = () => <I d={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>} />;
+const WrenchIcon = () => <I d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />;
+const BuildingIcon = () => <I d={<><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M9 22V12h6v10" /><rect x="8" y="6" width="3" height="3" rx="0.5" /><rect x="13" y="6" width="3" height="3" rx="0.5" /></>} />;
+const FileTextIcon = () => <I d={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></>} />;
+const CpuIcon = () => <I d={<><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><line x1="9" y1="1" x2="9" y2="4" /><line x1="15" y1="1" x2="15" y2="4" /><line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" /><line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" /><line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" /></>} />;
+const BarChart2Icon = () => <I d={<><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></>} />;
+const HomeIcon = () => <I d={<><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></>} />;
+const ClubIcon = () => <I d={<><path d="M12 2a5 5 0 0 1 5 5c0 2-1 4-3 5h4a3 3 0 0 1 3 3v1H3v-1a3 3 0 0 1 3-3h4c-2-1-3-3-3-5a5 5 0 0 1 5-5z" /></>} />;
+const VoteIcon = () => <I d={<><path d="M3 6h18M3 12h18M3 18h18" /></>} />;
+const LogoutIcon = () => <I d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" size={16} />;
+const CheckIcon = () => <I d="M20 6 9 17 4 12" size={16} />;
+const XIcon = () => <I d="M18 6 6 18M6 6l12 12" size={16} />;
 
 const Toast = ({ toast, onClose }) => {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose(toast.id);
-    }, 5000);
+    const timer = setTimeout(() => { onClose(toast.id); }, 5000);
     return () => clearTimeout(timer);
   }, [toast.id, onClose]);
-
   return (
     <div className={`toast ${toast.type}`}>
-      <div className="toast-icon">
-        {toast.type === 'success' ? '✓' : '✕'}
-      </div>
+      <div className="toast-icon">{toast.type === 'success' ? <CheckIcon /> : <XIcon />}</div>
       <div className="toast-content">
         <div className="toast-title">{toast.title}</div>
         <div className="toast-message">{toast.message}</div>
@@ -349,16 +366,17 @@ export default function AdminDashboard() {
   };
 
   const sidebarItems = [
-    { id: "profile", label: "My Profile", icon: "👤" },
-    { id: "overview", label: "Overview", icon: "📊" },
-    { id: "notices", label: "Notices", icon: "📢" },
-    { id: "staff", label: "Staff Management", icon: "👨‍💼" },
-    { id: "manageUsers", label: "Manage Users", icon: "👥" },
-    { id: "manageMaintenance", label: "Manage Maintenance", icon: "🔧" },
-    { id: "manageApartments", label: "Manage Apartments", icon: "🏢" },
-    { id: "manageComplaints", label: "Manage Complaints", icon: "📝" },
-    { id: "manageFacilities", label: "Facilities", icon: "🏊" },
-    { id: "managePolls", label: "Polls", icon: "🗳️" }
+    { id: "profile", label: "My Profile", icon: <UserIcon /> },
+    { id: "overview", label: "Overview", icon: <GridIcon /> },
+    { id: "notices", label: "Notices", icon: <BellIcon /> },
+    { id: "staff", label: "Staff Management", icon: <UsersIcon /> },
+    { id: "manageUsers", label: "Manage Users", icon: <UserIcon /> },
+    { id: "manageMaintenance", label: "Maintenance", icon: <WrenchIcon /> },
+    { id: "manageApartments", label: "Apartments", icon: <BuildingIcon /> },
+    { id: "manageComplaints", label: "Complaints", icon: <FileTextIcon /> },
+    { id: "manageFacilities", label: "Facilities", icon: <CpuIcon /> },
+    { id: "manageClubhouse", label: "Clubhouse", icon: <ClubIcon /> },
+    { id: "managePolls", label: "Polls", icon: <VoteIcon /> },
   ];
 
   if (loading) {
@@ -373,17 +391,22 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className={`dashboard-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+    <div className="dashboard-layout">
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       {/* SIDEBAR */}
       <aside className={`admin-sidebar ${isSidebarOpen ? '' : 'collapsed'}`}>
         <div className="sidebar-header">
-          <div className="admin-logo">🏢</div>
-          {isSidebarOpen && <div className="admin-title">Admin Panel</div>}
+          <div className="sidebar-brand-icon"><BuildingIcon /></div>
+          {isSidebarOpen && (
+            <div className="sidebar-brand-text">
+              <div className="brand-title">AMS Portal</div>
+              <div className="brand-sub">Admin Panel</div>
+            </div>
+          )}
           <button className="menu-toggle" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            {isSidebarOpen ? '☰' : '☰'}
+            <BarChart2Icon />
           </button>
         </div>
         <nav className="sidebar-nav">
@@ -399,29 +422,32 @@ export default function AdminDashboard() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div className="admin-user-info">
+          <div className="sidebar-user-card">
             <div className="user-avatar">{adminProfile.username?.charAt(0).toUpperCase()}</div>
-            <div className="user-details">
-              <span className="user-name">{adminProfile.username}</span>
-              <span className="user-role">Administrator</span>
-            </div>
+            {isSidebarOpen && (
+              <div className="user-info">
+                <div className="user-name">{adminProfile.username}</div>
+                <div className="user-role">Administrator</div>
+              </div>
+            )}
           </div>
           <button className="btn-logout" onClick={handleLogout}>
-            <span>🚪</span> Logout
+            <LogoutIcon /> {isSidebarOpen && 'Logout'}
           </button>
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
       <main className={`main-wrapper ${isSidebarOpen ? '' : 'expanded'}`}>
-        {/* PROFILE SECTION - Shown immediately on login */}
+        {/* PROFILE SECTION */}
         {activeView === "profile" && (
           <div className="fade-in-up">
-            <div className="page-header">
-              <h1>My Profile</h1>
-              <p className="page-subtitle">Manage your personal information</p>
+            <div className="page-header page-header-container">
+              <div>
+                <h1>My Profile</h1>
+                <p className="page-subtitle">Manage your personal information</p>
+              </div>
             </div>
-
             <div className="profile-container">
               <div className="profile-card">
                 <div className="profile-header">
@@ -568,6 +594,21 @@ export default function AdminDashboard() {
                   <button className="btn btn-primary" onClick={() => setActiveView("staff")}>
                     Manage Staff
                   </button>
+                  <button className="btn btn-primary" onClick={() => setActiveView("manageMaintenance")}>
+                    Manage Maintenance
+                  </button>
+                  <button className="btn btn-primary" onClick={() => setActiveView("manageComplaints")}>
+                    Manage Complaints
+                  </button>
+                  <button className="btn btn-primary" onClick={() => setActiveView("manageFacilities")}>
+                    Manage Facilities
+                  </button>
+                  <button className="btn btn-primary" onClick={() => setActiveView("manageClubhouse")}>
+                    Manage Clubhouse
+                  </button>
+                  <button className="btn btn-primary" onClick={() => setActiveView("managePolls")}>
+                    Manage Polls
+                  </button>
                 </div>
               </div>
               <div className="dashboard-card">
@@ -713,7 +754,7 @@ export default function AdminDashboard() {
                     <button className="inline-btn inline-btn-cancel" onClick={closeNoticeModal} disabled={noticeLoading}>
                       Cancel
                     </button>
-                    <button className={`inline-btn inline-btn-submit inline-btn-notice ${noticeLoading ? 'btn-loading' : ''}`} onClick={handleNoticeSubmit} disabled={noticeLoading}>
+                    <button className={`inline-btn inline-btn-submit btn-gradient-orange ${noticeLoading ? 'btn-loading' : ''}`} onClick={handleNoticeSubmit} disabled={noticeLoading}>
                       {noticeLoading ? 'Publishing...' : '📢 Publish Notice'}
                     </button>
                   </div>
@@ -759,7 +800,7 @@ export default function AdminDashboard() {
                 <h1>Staff Management</h1>
                 <p className="page-subtitle">Manage security guards and staff members</p>
               </div>
-              <button className="btn btn-primary" onClick={() => setShowStaffModal(!showStaffModal)}>
+              <button className="btn btn-gradient-blue" onClick={() => setShowStaffModal(!showStaffModal)}>
                 {showStaffModal ? '✕ Close Form' : '+ Add Staff Member'}
               </button>
             </div>
@@ -867,7 +908,7 @@ export default function AdminDashboard() {
                     <button className="inline-btn inline-btn-cancel" onClick={closeStaffModal} disabled={staffLoading}>
                       Cancel
                     </button>
-                    <button className={`inline-btn inline-btn-submit inline-btn-staff ${staffLoading ? 'btn-loading' : ''}`} onClick={handleStaffSubmit} disabled={staffLoading}>
+                    <button className={`inline-btn inline-btn-submit btn-gradient-blue ${staffLoading ? 'btn-loading' : ''}`} onClick={handleStaffSubmit} disabled={staffLoading}>
                       {staffLoading ? 'Adding...' : '➕ Add Staff Member'}
                     </button>
                   </div>
@@ -930,6 +971,8 @@ export default function AdminDashboard() {
         {activeView === "manageComplaints" && <ManageComplaints />}
 
         {activeView === "manageFacilities" && <ManageFacilities />}
+
+        {activeView === "manageClubhouse" && <ManageClubhouse />}
 
         {activeView === "managePolls" && (
           <ManagePolls />

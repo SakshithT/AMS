@@ -8,7 +8,6 @@ export default function ManageComplaints() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
-  const [showStaffModal, setShowStaffModal] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState("");
   // eslint-disable-next-line no-unused-vars
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -56,7 +55,6 @@ export default function ManageComplaints() {
     }
     try {
       await axiosInstance.put(`/admin/complaints/${selectedComplaint.id}/assign-staff?staffId=${selectedStaffId}`);
-      setShowStaffModal(false);
       setSelectedStaffId("");
       setSelectedComplaint(null);
       loadComplaints();
@@ -68,7 +66,6 @@ export default function ManageComplaints() {
 
   const openStaffAssignment = (complaint) => {
     setSelectedComplaint(complaint);
-    setShowStaffModal(true);
     setSelectedStaffId(complaint.staffId ? String(complaint.staffId) : "");
   };
 
@@ -115,50 +112,7 @@ export default function ManageComplaints() {
 
   return (
     <div className="admin-card fade-in-up">
-      {/* Staff Assignment Modal */}
-      {showStaffModal && (
-        <div className="modal-overlay">
-          <div className="modal-content fade-in-up">
-            <div className="modal-header">
-              <h3>Assign Staff to Complaint #{selectedComplaint?.id}</h3>
-              <button className="modal-close" onClick={() => setShowStaffModal(false)}>&times;</button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Select Staff Member</label>
-                <select
-                  className="form-select"
-                  value={selectedStaffId}
-                  onChange={(e) => setSelectedStaffId(e.target.value)}
-                >
-                  <option value="">-- Select Staff --</option>
-                  {staffList.map((staff) => (
-                    <option key={staff.id} value={staff.id}>
-                      {staff.username} - {staff.designation || 'Staff'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {selectedComplaint && (
-                <div className="complaint-summary">
-                  <h4>Complaint Details</h4>
-                  <p><strong>Title:</strong> {selectedComplaint.title}</p>
-                  <p><strong>Category:</strong> {selectedComplaint.category || 'General'}</p>
-                  <p><strong>Priority:</strong> {getPriorityBadge(selectedComplaint.priority)}</p>
-                </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowStaffModal(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleAssignStaff}>
-                Assign Staff & Start
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Staff Assignment Modal Code Removed */}
 
       <div className="section-header">
         <h3 className="section-title">Manage Complaints</h3>
@@ -179,7 +133,7 @@ export default function ManageComplaints() {
         </div>
       </div>
 
-      {selectedComplaint && !showStaffModal && (
+      {selectedComplaint && (
         <div className="inline-form-card fade-in-up mb-24">
           <div className="inline-form-accent accent-blue"></div>
           <div className="inline-form-header">
@@ -274,12 +228,27 @@ export default function ManageComplaints() {
               </button>
 
               {(selectedComplaint.status === "PENDING" || selectedComplaint.status === "IN_PROGRESS") && (
-                <button
-                  className="inline-btn inline-btn-submit btn-gradient-orange"
-                  onClick={() => openStaffAssignment(selectedComplaint)}
-                >
-                  ▶ {selectedComplaint.staffId ? "Reassign Staff" : "Assign Staff & Start"}
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <select
+                    className="inline-form-select"
+                    style={{ width: 'auto', minWidth: '160px', padding: '10px' }}
+                    value={selectedStaffId}
+                    onChange={(e) => setSelectedStaffId(e.target.value)}
+                  >
+                    <option value="">-- Select Staff --</option>
+                    {staffList.map((staff) => (
+                      <option key={staff.id} value={staff.id}>
+                        {staff.username} - {staff.designation || 'Staff'}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="inline-btn inline-btn-submit btn-gradient-orange"
+                    onClick={handleAssignStaff}
+                  >
+                    ▶ {selectedComplaint.staffId ? "Save Reassignment" : "Assign & Start"}
+                  </button>
+                </div>
               )}
               {selectedComplaint.status === "IN_PROGRESS" && (
                 <button
@@ -370,7 +339,7 @@ export default function ManageComplaints() {
                   <div className="action-buttons">
                     <button
                       className="btn btn-primary"
-                      onClick={() => setSelectedComplaint(complaint)}
+                      onClick={() => openStaffAssignment(complaint)}
                     >
                       View
                     </button>
