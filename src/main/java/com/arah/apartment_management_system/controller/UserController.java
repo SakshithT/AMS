@@ -1,5 +1,6 @@
 package com.arah.apartment_management_system.controller;
 
+import java.security.Principal;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -10,8 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import com.arah.apartment_management_system.dto.flat.FlatResponseDTO;
 import com.arah.apartment_management_system.dto.maintenance.MaintenanceResponseDTO;
 import com.arah.apartment_management_system.dto.user.UpdateUserRequest;
-import com.arah.apartment_management_system.dto.user.UserResponse;
+import com.arah.apartment_management_system.dto.notice.NoticeResponseDTO;
+import com.arah.apartment_management_system.dto.notice.NoticeResponseRequest;
 import com.arah.apartment_management_system.dto.staff.StaffResponse;
+import com.arah.apartment_management_system.dto.user.UserResponse;
 import com.arah.apartment_management_system.service.AdminService;
 import com.arah.apartment_management_system.service.FlatService;
 import com.arah.apartment_management_system.service.MaintenanceService;
@@ -73,6 +76,20 @@ public class UserController {
     @GetMapping("/notices")
     public ApiResponse<List<Notice>> getNotices() {
         return ApiResponse.success("Notices fetched successfully", noticeService.getAllNotices());
+    }
+
+    @GetMapping("/notices/{id}/responses")
+    public ApiResponse<List<NoticeResponseDTO>> getNoticeResponses(@PathVariable Long id) {
+        return ApiResponse.success("Responses fetched", noticeService.getNoticeResponses(id));
+    }
+
+    @PostMapping("/notices/{id}/responses")
+    public ApiResponse<String> addNoticeResponse(
+            @PathVariable Long id,
+            @RequestBody NoticeResponseRequest request,
+            Principal principal) {
+        noticeService.addNoticeResponse(id, request.getResponseText(), principal.getName());
+        return ApiResponse.success("Response added successfully", null);
     }
 
     // =============================================
