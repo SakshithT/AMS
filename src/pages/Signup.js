@@ -43,6 +43,16 @@ const ArrowIcon = () => (
   </svg>
 );
 
+const Field = ({ icon, label, type = "text", placeholder, value, onChange }) => (
+  <div className="auth-field">
+    <label>{label}</label>
+    <div className="auth-input-wrap">
+      <span className="auth-input-icon">{icon}</span>
+      <input type={type} className="auth-input" placeholder={placeholder} value={value} onChange={onChange} required />
+    </div>
+  </div>
+);
+
 function Signup() {
   const [form, setForm] = useState({ username: "", email: "", contactNumber: "", password: "", confirmPassword: "" });
   const [message, setMessage] = useState("");
@@ -70,15 +80,7 @@ function Signup() {
     } finally { setLoading(false); }
   };
 
-  const Field = ({ icon, label, name, type = "text", placeholder }) => (
-    <div className="auth-field">
-      <label>{label}</label>
-      <div className="auth-input-wrap">
-        <span className="auth-input-icon">{icon}</span>
-        <input type={type} className="auth-input" placeholder={placeholder} value={form[name]} onChange={set(name)} required />
-      </div>
-    </div>
-  );
+
 
   return (
     <div className="auth-page">
@@ -110,11 +112,11 @@ function Signup() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <Field icon={<UserIcon />} label="Username" name="username" placeholder="Choose a username" />
-            <Field icon={<MailIcon />} label="Email Address" name="email" type="email" placeholder="you@example.com" />
-            <Field icon={<PhoneIcon />} label="Contact Number" name="contactNumber" placeholder="+91 00000 00000" />
-            <Field icon={<LockIcon />} label="Password" name="password" type="password" placeholder="Min. 6 characters" />
-            <Field icon={<LockIcon />} label="Confirm Password" name="confirmPassword" type="password" placeholder="Re-enter password" />
+            <Field icon={<UserIcon />} label="Username" placeholder="Choose a username" value={form.username} onChange={set("username")} />
+            <Field icon={<MailIcon />} label="Email Address" type="email" placeholder="you@example.com" value={form.email} onChange={set("email")} />
+            <Field icon={<PhoneIcon />} label="Contact Number" placeholder="+91 00000 00000" value={form.contactNumber} onChange={set("contactNumber")} />
+            <Field icon={<LockIcon />} label="Password" type="password" placeholder="Min. 6 characters" value={form.password} onChange={set("password")} />
+            <Field icon={<LockIcon />} label="Confirm Password" type="password" placeholder="Re-enter password" value={form.confirmPassword} onChange={set("confirmPassword")} />
 
             {error && <div className="auth-message msg-err" style={{ marginBottom: 12 }}>{error}</div>}
             {message && <div className="auth-message msg-ok" style={{ marginBottom: 12 }}>{message}</div>}

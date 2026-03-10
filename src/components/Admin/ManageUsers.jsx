@@ -7,6 +7,7 @@ export default function ManageUsers() {
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editUserId, setEditUserId] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [deactivatingId, setDeactivatingId] = useState(null);
   const [reactivateUserId, setReactivateUserId] = useState(null);
   const [rejectingId, setRejectingId] = useState(null);
@@ -116,6 +117,7 @@ export default function ManageUsers() {
       }
       resetForm();
       loadUsers();
+      if (selectedUser && selectedUser.id === editUserId) setSelectedUser(null);
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       alert(error.response?.data?.message || "Operation failed");
@@ -139,6 +141,12 @@ export default function ManageUsers() {
 
   const cancelDeactivate = () => {
     setDeactivateConfirmId(null);
+  };
+
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
+    setDeactivateConfirmId(null);
+    setReactivateUserId(null);
   };
 
   const reactivateNonResident = async (user) => {
@@ -344,10 +352,7 @@ export default function ManageUsers() {
               )}
 
               <div className="inline-form-actions">
-                <button type="button" cl
-
-
-                  assName="inline-btn inline-btn-cancel" onClick={() => { resetForm(); setShowForm(false); }}>
+                <button type="button" className="inline-btn inline-btn-cancel" onClick={() => { resetForm(); setShowForm(false); }}>
                   Cancel
                 </button>
                 <button type="submit" className="inline-btn inline-btn-submit btn-gradient-blue" disabled={submitting}>
@@ -389,16 +394,72 @@ export default function ManageUsers() {
           </div>
         </div>
 
-        {/* Users Grid - Card Format (Full Details) */}
-        <div className="users-grid-compact">
-          {displayedUsers.length === 0 ? (
-            <p className="empty-text">No users found in this category.</p>
-          ) : (
-            displayedUsers.map((user) => {
-              const isDeactivated = user.status === "DEACTIVATED" || user.status === "PENDING";
-              const userRole = getRole(user);
+        {/* Split Layout Container */}
+        <div style={{ display: 'flex', gap: '24px', marginTop: '24px', alignItems: 'flex-start' }}>
 
-              // Determine avatar color based on role
+          {/* Left Side - User List Box */}
+          <div style={{ flex: '1', minWidth: '300px', background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '600px' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-2)', background: 'var(--surface-2)' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--txt)' }}>User Directory</h3>
+            </div>
+            <div style={{ flex: '1', overflowY: 'auto', padding: '12px' }}>
+              {displayedUsers.length === 0 ? (
+                <p className="empty-text" style={{ padding: '20px', textAlign: 'center' }}>No users found in this category.</p>
+              ) : (
+                displayedUsers.map((user) => {
+                  const isDeactivated = user.status === "DEACTIVATED" || user.status === "PENDING";
+                  const userRole = getRole(user);
+                  const isSelected = selectedUser && selectedUser.id === user.id;
+
+                  const getAvatarGradient = () => {
+                    if (userRole === "ROLE_ADMIN") return "linear-gradient(135deg, #9b59b6, #8e44ad)";
+                    if (userRole === "ROLE_SECURITY") return "linear-gradient(135deg, #3498db, #2980b9)";
+                    return "linear-gradient(135deg, #27ae60, #229954)";
+                  };
+
+                  return (
+                    <div
+                      key={user.id}
+                      onClick={() => handleSelectUser(user)}
+                      style={{
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        cursor: 'pointer',
+                        borderRadius: 'var(--r-md)',
+                        transition: 'all 0.2s',
+                        background: isSelected ? 'var(--p-light)' : 'transparent',
+                        border: isSelected ? '1px solid var(--p-muted)' : '1px solid transparent',
+                        marginBottom: '4px'
+                      }}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--surface-2)'; }}
+                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: getAvatarGradient(), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 'bold' }}>
+                        {user.username?.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: '1', minWidth: 0 }}>
+                        <h4 style={{ margin: '0 0 2px 0', fontSize: '14px', color: 'var(--txt)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.username}</h4>
+                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--txt-3)' }}>{user.email}</p>
+                      </div>
+                      <span className={`badge ${isDeactivated ? "badge-inactive" : "badge-active"}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
+                        {user.status || "ACTIVE"}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Right Side - Detailed Card Container */}
+          <div style={{ flex: '2', background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)', minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+            {selectedUser ? (() => {
+              const u = displayedUsers.find(du => du.id === selectedUser.id) || selectedUser;
+              const isDeactivated = u.status === "DEACTIVATED" || u.status === "PENDING";
+              const userRole = getRole(u);
+
               const getAvatarGradient = () => {
                 if (userRole === "ROLE_ADMIN") return "linear-gradient(135deg, #9b59b6, #8e44ad)";
                 if (userRole === "ROLE_SECURITY") return "linear-gradient(135deg, #3498db, #2980b9)";
@@ -406,96 +467,138 @@ export default function ManageUsers() {
               };
 
               return (
-                <div key={user.id} className="user-card-compact">
-                  <div className="user-card-compact-header">
-                    <div className="user-card-compact-avatar" style={{ background: getAvatarGradient() }}>
-                      {user.username?.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="user-card-compact-info">
-                      <h4>{user.username}</h4>
-                      <p>{user.email}</p>
-                    </div>
-                    <span className={`badge ${isDeactivated ? "badge-inactive" : "badge-active"}`}>
-                      {user.status || "ACTIVE"}
-                    </span>
-                  </div>
+                <div style={{ width: '100%' }}>
+                  {/* Card Header with Banner */}
+                  <div style={{ position: 'relative', height: '100px', background: 'linear-gradient(90deg, var(--p-dark), var(--p))', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}></div>
+                  <div style={{ padding: '0 32px 32px', position: 'relative' }}>
 
-                  <div className="user-card-compact-details">
-                    <div><strong>Role:</strong> <span>{userRole === "ROLE_ADMIN" ? "Admin" : userRole === "ROLE_SECURITY" ? "Security" : "Resident"}</span></div>
-                    <div><strong>Phone:</strong> <span>{user.contactNumber || "N/A"}</span></div>
-                    {userRole === "ROLE_RESIDENT" && (
-                      <>
-                        <div><strong>Flat:</strong> <span>{user.flatNumber ? `Flat ${user.flatNumber}` : "Not Assigned"}</span></div>
-                        <div><strong>Block:</strong> <span>{user.blockName || "N/A"}</span></div>
-                      </>
-                    )}
-                  </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ width: '84px', height: '84px', borderRadius: '16px', background: getAvatarGradient(), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: 'bold', marginTop: '-42px', border: '5px solid var(--surface)', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
+                        {u.username?.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(u)}>✏️ Edit</button>
+                      </div>
+                    </div>
 
-                  <div className="user-card-compact-actions">
-                    {!isDeactivated ? (
-                      <>
-                        {deactivateConfirmId === user.id ? (
-                          <div className="action-group">
-                            <button className="btn btn-danger btn-sm" onClick={() => confirmDeactivate(user.id)} disabled={deactivatingId === user.id}>
-                              {deactivatingId === user.id ? "..." : "Confirm"}
-                            </button>
-                            <button className="btn btn-secondary btn-sm" onClick={cancelDeactivate}>Cancel</button>
-                          </div>
-                        ) : (
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDeactivate(user.id)}>Deactivate</button>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {reactivateUserId === user.id ? (
-                          <div className="reactivate-compact">
-                            {userRole === "ROLE_RESIDENT" && (
-                              <select
-                                className="inline-form-select"
-                                value={flatIdToAllocate}
-                                onChange={(e) => setFlatIdToAllocate(e.target.value)}
-                              >
-                                <option value="">Select Flat...</option>
-                                {availableFlats.map(flat => (
-                                  <option key={flat.id} value={flat.id}>
-                                    Flat {flat.flatNumber}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                            {flatIdError && <span className="inline-form-error">{flatIdError}</span>}
-                            <div className="action-group">
-                              <button className="btn btn-primary btn-sm" onClick={() => submitReactivate(user)}>
-                                {userRole === "ROLE_RESIDENT" ? (user.status === "PENDING" ? "Approve" : "Reactivate") : (user.status === "PENDING" ? "Approve" : "Reactivate")}
+                    <div style={{ marginTop: '16px' }}>
+                      <h2 style={{ margin: '0 0 4px 0', fontSize: '24px', letterSpacing: '-0.3px', color: 'var(--txt)' }}>
+                        {u.fullName || u.username}
+                      </h2>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ color: 'var(--txt-3)', fontSize: '14px' }}>@{u.username}</span>
+                        <span className={`badge ${isDeactivated ? "badge-inactive" : "badge-active"}`}>
+                          {u.status || "ACTIVE"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) minmax(200px, 1fr)', gap: '24px', background: 'var(--surface-2)', padding: '24px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--txt-3)', letterSpacing: '0.5px' }}>Role Type</strong>
+                        <span style={{ fontSize: '15px', fontWeight: '500', color: 'var(--txt)' }}>
+                          {userRole === "ROLE_ADMIN" ? "Administator" : userRole === "ROLE_SECURITY" ? "Security Staff" : "Resident"}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--txt-3)', letterSpacing: '0.5px' }}>Email Address</strong>
+                        <span style={{ fontSize: '15px', fontWeight: '500', color: 'var(--txt)' }}>{u.email}</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--txt-3)', letterSpacing: '0.5px' }}>Phone Number</strong>
+                        <span style={{ fontSize: '15px', fontWeight: '500', color: 'var(--txt)' }}>{u.contactNumber || "N/A"}</span>
+                      </div>
+                      {userRole === "ROLE_RESIDENT" && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--txt-3)', letterSpacing: '0.5px' }}>Flat Assignment</strong>
+                          <span style={{ fontSize: '15px', fontWeight: '500', color: 'var(--txt)' }}>
+                            {u.flatNumber ? `Flat ${u.flatNumber} (${u.blockName || 'unknown Block'})` : "Not Assigned"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Management Actions */}
+                    <div style={{ marginTop: '32px', paddingTop: ' ২৪px', borderTop: '1px solid var(--border-2)' }}>
+                      <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', color: 'var(--txt)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Account Actions</h4>
+
+                      {!isDeactivated ? (
+                        <>
+                          {deactivateConfirmId === u.id ? (
+                            <div className="action-group" style={{ background: 'var(--danger-bg)', padding: '16px', borderRadius: 'var(--r-md)', border: '1px solid #FECACA' }}>
+                              <span style={{ marginRight: '12px', color: '#991B1B', fontWeight: '500', fontSize: '14px' }}>Are you sure you want to deactivate?</span>
+                              <button className="btn btn-danger" onClick={() => confirmDeactivate(u.id)} disabled={deactivatingId === u.id}>
+                                {deactivatingId === u.id ? "Deactivating..." : "Confirm Deactivation"}
                               </button>
-                              <button className="btn btn-secondary btn-sm" onClick={() => { setReactivateUserId(null); setFlatIdToAllocate(""); setFlatIdError(""); }}>Cancel</button>
+                              <button className="btn btn-secondary" onClick={cancelDeactivate}>Cancel</button>
                             </div>
-                          </div>
-                        ) : (
-                          <>
-                            {user.status === "PENDING" ? (
-                              <div className="action-group">
-                                <button className="btn btn-success btn-sm" onClick={() => setReactivateUserId(user.id)}>Approve</button>
-                                <button className="btn btn-danger btn-sm" onClick={() => handleReject(user.id)} disabled={rejectingId === user.id}>
-                                  {rejectingId === user.id ? "..." : "Reject"}
+                          ) : (
+                            <button className="btn btn-danger" onClick={() => handleDeactivate(u.id)}>Deactivate Account</button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {reactivateUserId === u.id ? (
+                            <div className="action-group" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-2)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '16px' }}>
+
+                              {userRole === "ROLE_RESIDENT" && (
+                                <div style={{ width: '100%', maxWidth: '350px' }}>
+                                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>Assign a Flat before Reactivation <span className="required-star">*</span></label>
+                                  <select
+                                    className="inline-form-select"
+                                    value={flatIdToAllocate}
+                                    onChange={(e) => setFlatIdToAllocate(e.target.value)}
+                                  >
+                                    <option value="">Select an available flat...</option>
+                                    {availableFlats.map(flat => (
+                                      <option key={flat.id} value={flat.id}>
+                                        Flat {flat.flatNumber}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  {flatIdError && <span className="inline-form-error" style={{ display: 'block', marginTop: '6px' }}>{flatIdError}</span>}
+                                </div>
+                              )}
+
+                              <div style={{ display: 'flex', gap: '10px' }}>
+                                <button className="btn btn-primary" onClick={() => submitReactivate(u)}>
+                                  {u.status === "PENDING" ? "✅ Approve Account" : "🔄 Reactivate Account"}
                                 </button>
+                                <button className="btn btn-secondary" onClick={() => { setReactivateUserId(null); setFlatIdToAllocate(""); setFlatIdError(""); }}>Cancel</button>
                               </div>
-                            ) : (
-                              userRole === "ROLE_RESIDENT" ? (
-                                <button className="btn btn-primary btn-sm" onClick={() => setReactivateUserId(user.id)}>Reactivate</button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                              {u.status === "PENDING" ? (
+                                <>
+                                  <button className="btn btn-success" onClick={() => setReactivateUserId(u.id)}>Approve Request</button>
+                                  <button className="btn btn-danger" onClick={() => handleReject(u.id)} disabled={rejectingId === u.id}>
+                                    {rejectingId === u.id ? "Rejecting..." : "Reject Request"}
+                                  </button>
+                                </>
                               ) : (
-                                <button className="btn btn-success btn-sm" onClick={() => reactivateNonResident(user)}>Reactivate</button>
-                              )
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
+                                userRole === "ROLE_RESIDENT" ? (
+                                  <button className="btn btn-primary" onClick={() => setReactivateUserId(u.id)}>Reactivate Account</button>
+                                ) : (
+                                  <button className="btn btn-success" onClick={() => reactivateNonResident(u)}>Reactivate Environment</button>
+                                )
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
-            })
-          )}
+            })() : (
+              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--txt-3)', textAlign: 'center', padding: '40px' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: '0.4' }}>👤</div>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: 'var(--txt-2)' }}>No User Selected</h3>
+                <p style={{ margin: 0, fontSize: '14px', maxWidth: '280px' }}>Click on any user from the directory list to perfectly view and manage their detailed card.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

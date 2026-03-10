@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../../utils/axiosConfig";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import "./AdminShared.css";
 
 export default function ManagePolls() {
@@ -8,6 +9,11 @@ export default function ManagePolls() {
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState("");
+
+    const [selectedPoll, setSelectedPoll] = useState(null);
+    const [showResultsModal, setShowResultsModal] = useState(false);
+
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ff7300'];
 
     const [formData, setFormData] = useState({
         question: "",
@@ -96,6 +102,11 @@ export default function ManagePolls() {
         const isExpired = new Date(endDate) < new Date();
         if (status === 'ACTIVE' && !isExpired) return <span className="badge badge-active">Active</span>;
         return <span className="badge badge-inactive">Closed</span>;
+    };
+
+    const viewResults = (poll) => {
+        setSelectedPoll(poll);
+        setShowResultsModal(true);
     };
 
     return (
@@ -252,12 +263,13 @@ export default function ManagePolls() {
                                 <th>End Date</th>
                                 <th>Status</th>
                                 <th>Created By</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {polls.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="text-center">No polls found</td>
+                                    <td colSpan="6" className="text-center">No polls found</td>
                                 </tr>
                             ) : (
                                 polls.map((poll) => (
@@ -270,6 +282,11 @@ export default function ManagePolls() {
                                         <td>{new Date(poll.endDate).toLocaleDateString()}</td>
                                         <td>{getStatusBadge(poll.status, poll.endDate)}</td>
                                         <td>{poll.createdBy?.username || poll.createdBy || 'Admin'}</td>
+                                        <td>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => viewResults(poll)}>
+                                                View Results
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))
                             )}
@@ -277,6 +294,56 @@ export default function ManagePolls() {
                     </table>
                 </div>
             </div>
+
+            {/*  Results Modal */}
+            {showResultsModal && selectedPoll && (
+                <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div className="modal-content" style={{ background: 'white', padding: '24px', borderRadius: '12px', width: '600px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, color: '#333' }}>📊 Poll Results</h3>
+                            <button className="btn-close" style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999', lineHeight: 1 }} onClick={() => setShowResultsModal(false)}>✕</button>
+                        </div>
+                        <h4 style={{ marginBottom: '20px', color: '#444', textAlign: 'center', fontSize: '18px' }}>{selectedPoll.question}</h4>
+
+                        <div style={{ height: '350px', width: '100%' }}>
+                            {selectedPoll.options && selectedPoll.options.some(opt => opt.voteCount > 0) ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={selectedPoll.options.map(opt => ({ name: opt.text, value: opt.voteCount || 0 }))}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={true}
+                                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                            outerRadius={110}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                            animationDuration={800}
+                                        >
+                                            {selectedPoll.options.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value) => [`${value} votes`, 'Count']}
+                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                        />
+                                        <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#888', background: '#f8f9fa', borderRadius: '8px' }}>
+                                    <span style={{ fontSize: '40px', marginBottom: '10px' }}>🤷‍♂️</span>
+                                    <p style={{ margin: 0, fontSize: '16px' }}>No votes have been cast yet.</p>
+                                </div>
+                            )}
+                        </div>
+                        <div style={{ marginTop: '25px', textAlign: 'right', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+                            <button className="btn btn-primary" onClick={() => setShowResultsModal(false)} style={{ padding: '8px 24px' }}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

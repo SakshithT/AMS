@@ -9,18 +9,61 @@ export default function ManageClubhouse() {
     const [errors, setErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState("");
 
+    const [flats, setFlats] = useState([]);
+    const [maxCapacity, setMaxCapacity] = useState("");
+    const [settingCapacity, setSettingCapacity] = useState(false);
+
     const [formData, setFormData] = useState({
         name: "",
         occasionType: "",
         occasionDate: "",
         capacity: "",
         roomsForGuests: "",
-        specialRequests: ""
+        specialRequests: "",
+        flatId: ""
     });
 
     useEffect(() => {
         loadBookings();
+        loadFlats();
+        loadMaxCapacity();
     }, []);
+
+    const loadFlats = async () => {
+        try {
+            const res = await axiosInstance.get("/flats");
+            let data = res.data;
+            if (data && data.data) data = data.data;
+            if (data && data.content) data = data.content;
+            setFlats(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("Error loading flats:", error);
+        }
+    };
+
+    const loadMaxCapacity = async () => {
+        try {
+            const res = await axiosInstance.get("/admin/clubhouse/capacity");
+            if (res.data.data) {
+                setMaxCapacity(res.data.data);
+            }
+        } catch (error) {
+            console.error("Error loading capacity:", error);
+        }
+    };
+
+    const handleSetCapacity = async () => {
+        if (!maxCapacity) return;
+        setSettingCapacity(true);
+        try {
+            await axiosInstance.put("/admin/clubhouse/capacity", { capacity: parseInt(maxCapacity) });
+            alert("Max capacity updated successfully!");
+        } catch (error) {
+            alert(error.response?.data?.message || "Failed to update capacity");
+        } finally {
+            setSettingCapacity(false);
+        }
+    };
 
     const loadBookings = async () => {
         try {
@@ -38,6 +81,7 @@ export default function ManageClubhouse() {
         if (!formData.name.trim()) newErrors.name = "Name is required";
         if (!formData.occasionType.trim()) newErrors.occasionType = "Occasion type is required";
         if (!formData.occasionDate) newErrors.occasionDate = "Date is required";
+        if (!formData.flatId) newErrors.flatId = "Flat selection is required";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -50,7 +94,8 @@ export default function ManageClubhouse() {
             occasionDate: "",
             capacity: "",
             roomsForGuests: "",
-            specialRequests: ""
+            specialRequests: "",
+            flatId: ""
         });
         setErrors({});
     };
@@ -110,9 +155,24 @@ export default function ManageClubhouse() {
                     <h1 className="page-title">Manage Clubhouse</h1>
                     <p className="page-subtitle">View and manage resident bookings or add your own</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => { resetForm(); setShowForm(!showForm); }}>
-                    {showForm ? '✕ Close Form' : '+ Book Clubhouse'}
-                </button>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', background: '#f8f9fa', padding: '5px 10px', borderRadius: '5px', border: '1px solid #dee2e6' }}>
+                        <label style={{ marginRight: '10px', fontSize: '14px', fontWeight: '500' }}>Max Capacity:</label>
+                        <input
+                            type="number"
+                            style={{ width: '80px', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', marginRight: '10px' }}
+                            value={maxCapacity}
+                            onChange={(e) => setMaxCapacity(e.target.value)}
+                            placeholder="Limit"
+                        />
+                        <button className="btn btn-sm btn-primary" onClick={handleSetCapacity} disabled={settingCapacity}>
+                            {settingCapacity ? 'Saving...' : 'Set'}
+                        </button>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => { resetForm(); setShowForm(!showForm); }}>
+                        {showForm ? '✕ Close Form' : '+ Book Clubhouse'}
+                    </button>
+                </div>
             </div>
 
             {successMessage && <div className="success-message">{successMessage}</div>}
@@ -157,6 +217,22 @@ export default function ManageClubhouse() {
                             </div>
 
                             <div className="inline-form-row">
+                                <div className={`inline-form-group ${errors.flatId ? 'has-error' : ''}`}>
+                                    <label>Select Flat <span className="required-star">*</span></label>
+                                    <select
+                                        className={`inline-form-input ${errors.flatId ? 'error' : ''}`}
+                                        value={formData.flatId}
+                                        onChange={(e) => setFormData({ ...formData, flatId: e.target.value })}
+                                    >
+                                        <option value="">-- Select Flat --</option>
+                                        {flats.map(flat => (
+                                            <option key={flat.id} value={flat.id}>
+                                                {flat.flatNumber} {flat.block?.blockName ? `(${flat.block.blockName})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.flatId && <span className="inline-form-error">{errors.flatId}</span>}
+                                </div>
                                 <div className={`inline-form-group ${errors.occasionDate ? 'has-error' : ''}`}>
                                     <label>Occasion Date <span className="required-star">*</span></label>
                                     <input
