@@ -24,7 +24,8 @@ export default function ManageUsers() {
     confirmPassword: "",
     role: "ROLE_SECURITY",
     fullName: "",
-    phoneNumber: ""
+    phoneNumber: "",
+    flatId: ""
   });
   const [availableFlats, setAvailableFlats] = useState([]);
   const [activeTab, setActiveTab] = useState("all"); // "all", "residents", "requests"
@@ -69,15 +70,22 @@ export default function ManageUsers() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
       newErrors.email = "Please enter a valid email";
     }
-    if (!userData.password) {
-      newErrors.password = "Password is required";
-    } else if (userData.password.length < 6) {
+    if (!isEditing) {
+      if (!userData.password) {
+        newErrors.password = "Password is required";
+      } else if (userData.password.length < 6) {
+        newErrors.password = "Password must be at least 6 characters";
+      }
+    } else if (userData.password && userData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
     if (!isEditing && userData.password !== userData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
     if (!userData.phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required";
+    if (userData.role === "ROLE_RESIDENT" && !userData.flatId) {
+      newErrors.flatId = "Please select a flat";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,7 +98,8 @@ export default function ManageUsers() {
       confirmPassword: "",
       role: "ROLE_SECURITY",
       fullName: "",
-      phoneNumber: ""
+      phoneNumber: "",
+      flatId: ""
     });
     setErrors({});
     setIsEditing(false);
@@ -116,7 +125,8 @@ export default function ManageUsers() {
         setSuccessMessage("User created successfully!");
       }
       resetForm();
-      loadUsers();
+      await loadUsers();
+      await loadFlats(); // refresh available flats (a resident creation allocates a flat)
       if (selectedUser && selectedUser.id === editUserId) setSelectedUser(null);
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
@@ -135,6 +145,7 @@ export default function ManageUsers() {
       setDeactivatingId(userId);
       await axiosInstance.put(`/admin/users/${userId}/deactivate`);
       await loadUsers();
+      await loadFlats(); // flat is freed on deactivation — refresh immediately
       setDeactivateConfirmId(null);
     } finally { setDeactivatingId(null); }
   };
@@ -151,8 +162,6 @@ export default function ManageUsers() {
 
   const reactivateNonResident = async (user) => {
     try {
-      // Calls: PUT /admin/users/{id}/reactivate
-      // Requires backend endpoint — see instructions above
       await axiosInstance.put(`/admin/users/${user.id}/reactivate`);
       setReactivateUserId(null);
       await loadUsers();
@@ -178,6 +187,7 @@ export default function ManageUsers() {
       setReactivateUserId(null);
       setFlatIdToAllocate("");
       await loadUsers();
+      await loadFlats(); // flat is now allocated — remove it from available list
       setActiveTab("all");
     } catch (error) {
       console.error("Error activating resident:", error);
@@ -205,7 +215,8 @@ export default function ManageUsers() {
       confirmPassword: "",
       role: user.role || (user.roles && user.roles[0]?.name) || "ROLE_SECURITY",
       fullName: user.fullName || "",
-      phoneNumber: user.contactNumber || ""
+      phoneNumber: user.contactNumber || "",
+      flatId: user.flatId || ""
     });
     setIsEditing(true);
     setEditUserId(user.id);
@@ -215,9 +226,9 @@ export default function ManageUsers() {
 
   const getRole = (u) => u.role || (u.roles && u.roles[0]?.name);
 
-  const allActiveUsers = users.filter(u => u.status !== "DEACTIVATED" && u.status !== "PENDING");
-  const residentUsers = users.filter(u => getRole(u) === "ROLE_RESIDENT" && u.status !== "DEACTIVATED" && u.status !== "PENDING");
-  const pendingUsers = users.filter(u => u.status === "DEACTIVATED" || u.status === "PENDING");
+  const allActiveUsers = users.filter(u => u.status !== "DEACTIVATED" && u.status !== "PENDING" && u.status !== "REJECTED");
+  const residentUsers = users.filter(u => getRole(u) === "ROLE_RESIDENT" && u.status !== "DEACTIVATED" && u.status !== "PENDING" && u.status !== "REJECTED");
+  const pendingUsers = users.filter(u => u.status === "DEACTIVATED" || u.status === "PENDING" || u.status === "REJECTED");
 
   const matchSearch = (u) => {
     const q = searchQuery.toLowerCase();
@@ -347,7 +358,26 @@ export default function ManageUsers() {
                     />
                     {errors.confirmPassword && <span className="inline-form-error">{errors.confirmPassword}</span>}
                   </div>
-                  <div className="inline-form-group"></div>
+                  {userData.role === 'ROLE_RESIDENT' ? (
+                    <div className={`inline-form-group ${errors.flatId ? 'has-error' : ''}`}>
+                      <label>Assign Flat <span className="required-star">*</span></label>
+                      <select
+                        className={`inline-form-select ${errors.flatId ? 'error' : ''}`}
+                        value={userData.flatId || ""}
+                        onChange={(e) => setUserData({ ...userData, flatId: e.target.value })}
+                      >
+                        <option value="">Select an available flat...</option>
+                        {availableFlats.map(flat => (
+                          <option key={flat.id} value={flat.id}>
+                            Flat {flat.flatNumber} {flat.blockName ? `(${flat.blockName})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.flatId && <span className="inline-form-error">{errors.flatId}</span>}
+                    </div>
+                  ) : (
+                    <div className="inline-form-group"></div>
+                  )}
                 </div>
               )}
 
@@ -552,7 +582,7 @@ export default function ManageUsers() {
                                     <option value="">Select an available flat...</option>
                                     {availableFlats.map(flat => (
                                       <option key={flat.id} value={flat.id}>
-                                        Flat {flat.flatNumber}
+                                        Flat {flat.flatNumber}{flat.block?.blockName ? ` — ${flat.block.blockName}` : flat.blockName ? ` — ${flat.blockName}` : ''}
                                       </option>
                                     ))}
                                   </select>

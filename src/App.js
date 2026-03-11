@@ -8,19 +8,16 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Signup from "./pages/Signup";
-// djddwj
+
 function App() {
   return (
     <Router>
       <Routes>
-
-        {/* Public Route */}
         <Route path="/" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* Admin Route */}
         <Route
           path="/Admin/AdminDashboard"
           element={
@@ -30,7 +27,6 @@ function App() {
           }
         />
 
-        {/* Resident Route */}
         <Route
           path="/Resident/ResidentDashboard"
           element={
@@ -40,7 +36,6 @@ function App() {
           }
         />
 
-        {/* Security Route */}
         <Route
           path="/Security/SecurityDashboard"
           element={
@@ -49,7 +44,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
       </Routes>
     </Router>
   );

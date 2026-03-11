@@ -12,7 +12,6 @@ import ManageFacilities from "../../components/Admin/ManageFacilities";
 import ManageClubhouse from "../../components/Admin/ManageClubhouse";
 import ManageVisitors from "../../components/Admin/ManageVisitors";
 
-// ── SVG Icons ─────────────────────────────────────────────
 const I = ({ d, size = 18, stroke = 2 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">
     {typeof d === 'string' ? <path d={d} /> : d}
@@ -52,7 +51,6 @@ const Toast = ({ toast, onClose }) => {
   );
 };
 
-// Toast container component
 const ToastContainer = ({ toasts, removeToast }) => {
   return (
     <div className="toast-container">
@@ -63,9 +61,127 @@ const ToastContainer = ({ toasts, removeToast }) => {
   );
 };
 
+function MoveHistoryView() {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState("ALL");
+
+  useEffect(() => {
+    axiosInstance.get("/allotments/history")
+      .then(res => {
+        const data = res.data?.data || res.data || [];
+        setHistory(Array.isArray(data) ? data : []);
+      })
+      .catch(err => console.error("Failed to load history", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = filterStatus === "ALL"
+    ? history
+    : history.filter(h => h.status === filterStatus);
+
+  const statusBadge = (status) => {
+    const map = {
+      ACTIVE:   { cls: "badge-active",   label: "Active (Move-In)" },
+      VACATED:  { cls: "badge-neutral",  label: "Vacated (Move-Out)" },
+      INACTIVE: { cls: "badge-neutral",  label: "Vacated (Move-Out)" },
+    };
+    const s = map[status] || { cls: "badge-neutral", label: status };
+    return <span className={`badge ${s.cls}`}>{s.label}</span>;
+  };
+
+  const isMovedOut = (h) => (h.status === 'VACATED' || h.status === 'INACTIVE') && h.endDate;
+
+  if (loading) return <div className="admin-card">Loading move history...</div>;
+
+  return (
+    <div className="fade-in-up">
+      <div className="page-header page-header-container">
+        <div>
+          <h1 className="page-title">Move-In / Move-Out History</h1>
+          <p className="page-subtitle">Complete allotment history for all residents</p>
+        </div>
+        <div className="filter-group">
+          <label>Filter:</label>
+          <select className="form-select" style={{ width: "auto" }}
+            value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <option value="ALL">All</option>
+            <option value="ACTIVE">Active (Move-In)</option>
+            <option value="VACATED">Vacated (Move-Out)</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="stats-row" style={{ marginBottom: '20px' }}>
+        <div className="mini-stat">
+          <span className="mini-stat-number">{history.length}</span>
+          <span className="mini-stat-label">Total Records</span>
+        </div>
+        <div className="mini-stat">
+          <span className="mini-stat-number">{history.filter(h => h.status === 'ACTIVE').length}</span>
+          <span className="mini-stat-label">Currently Active</span>
+        </div>
+        <div className="mini-stat">
+          <span className="mini-stat-number">{history.filter(h => h.status === 'VACATED').length}</span>
+          <span className="mini-stat-label">Vacated</span>
+        </div>
+      </div>
+
+      <div className="admin-card mt-0">
+        <h3 className="card-title">Allotment Records ({filtered.length})</h3>
+        <div className="table-responsive">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Resident</th>
+                <th>Email</th>
+                <th>Flat</th>
+                <th>Block</th>
+                <th>Move-In Date</th>
+                <th>Move-Out Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr><td colSpan="8" className="text-center">No records found</td></tr>
+              ) : (
+                filtered.map(h => (
+                  <tr key={h.id}>
+                    <td>#{h.id}</td>
+                    <td><strong>{h.username}</strong></td>
+                    <td><span style={{ fontSize: '13px', color: 'var(--txt-3)' }}>{h.email}</span></td>
+                    <td>Flat {h.flatNumber}</td>
+                    <td>{h.blockName || '—'}</td>
+                    <td>
+                      {h.startDate
+                        ? <span style={{ color: '#16a34a', fontWeight: 500 }}>{h.startDate}</span>
+                        : <span style={{ color: 'var(--txt-3)' }}>—</span>}
+                    </td>
+                    <td>
+                      {isMovedOut(h)
+                        ? <span style={{ color: '#dc2626', fontWeight: 500 }}>{h.endDate}</span>
+                        : <span style={{ color: 'var(--txt-3)' }}>—</span>}
+                    </td>
+                    <td>{statusBadge(h.status)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
-  const [activeView, setActiveView] = useState("profile");
+
+  const [activeView, setActiveView] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const profileDropdownRef = useRef(null);
   const [flats, setFlats] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [apartments, setApartments] = useState([]);
@@ -166,11 +282,14 @@ export default function AdminDashboard() {
         setShowStaffModal(false);
         setStaffErrors({});
       }
+      if (showProfileDropdown && profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showNoticeModal, showStaffModal]);
+  }, [showNoticeModal, showStaffModal, showProfileDropdown]);
 
   useEffect(() => {
     loadFlats();
@@ -393,7 +512,6 @@ export default function AdminDashboard() {
   };
 
   const sidebarItems = [
-    { id: "profile", label: "My Profile", icon: <UserIcon /> },
     { id: "overview", label: "Overview", icon: <GridIcon /> },
     { id: "notices", label: "Notices", icon: <BellIcon /> },
     { id: "staff", label: "Staff Management", icon: <UsersIcon /> },
@@ -405,6 +523,7 @@ export default function AdminDashboard() {
     { id: "manageFacilities", label: "Facilities", icon: <CpuIcon /> },
     { id: "manageClubhouse", label: "Clubhouse", icon: <ClubIcon /> },
     { id: "managePolls", label: "Polls", icon: <VoteIcon /> },
+    { id: "moveHistory", label: "Move History", icon: <HomeIcon /> },
   ];
 
   if (loading) {
@@ -450,20 +569,62 @@ export default function AdminDashboard() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div className="sidebar-user-card">
-            <div className="user-avatar">{adminProfile.username?.charAt(0).toUpperCase()}</div>
-            {isSidebarOpen && (
-              <div className="user-info">
-                <div className="user-name">{adminProfile.username}</div>
-                <div className="user-role">Administrator</div>
+        </div>
+      </aside>
+
+      {/* TOP HEADER */}
+      <header className={`top-header ${isSidebarOpen ? '' : 'top-header-expanded'}`}>
+        <div className="top-header-right">
+          <div className="header-profile" ref={profileDropdownRef}>
+            <button
+              className="header-profile-btn"
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+            >
+              <div className="header-avatar">
+                {adminProfile.username?.charAt(0).toUpperCase()}
+              </div>
+              <span className="header-username">{adminProfile.username}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ transition: 'transform 0.2s', transform: showProfileDropdown ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {showProfileDropdown && (
+              <div className="header-dropdown">
+                <div className="header-dropdown-user">
+                  <div className="header-dropdown-avatar">
+                    {adminProfile.username?.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="header-dropdown-name">{adminProfile.username}</div>
+                    <div className="header-dropdown-role">Administrator</div>
+                  </div>
+                </div>
+                <div className="header-dropdown-divider" />
+                <button
+                  className="header-dropdown-item"
+                  onClick={() => { setActiveView('profile'); setShowProfileDropdown(false); }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                  </svg>
+                  My Profile
+                </button>
+                <div className="header-dropdown-divider" />
+                <button
+                  className="header-dropdown-item header-dropdown-logout"
+                  onClick={handleLogout}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                  </svg>
+                  Logout
+                </button>
               </div>
             )}
           </div>
-          <button className="btn-logout" onClick={handleLogout}>
-            <LogoutIcon /> {isSidebarOpen && 'Logout'}
-          </button>
         </div>
-      </aside>
+      </header>
 
       {/* MAIN CONTENT */}
       <main className={`main-wrapper ${isSidebarOpen ? '' : 'expanded'}`}>
@@ -1035,6 +1196,11 @@ export default function AdminDashboard() {
 
         {activeView === "managePolls" && (
           <ManagePolls />
+        )}
+
+        {/* MOVE HISTORY SECTION */}
+        {activeView === "moveHistory" && (
+          <MoveHistoryView />
         )}
       </main>
     </div>

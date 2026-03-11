@@ -12,11 +12,13 @@ export default function ManageClubhouse() {
     const [flats, setFlats] = useState([]);
     const [maxCapacity, setMaxCapacity] = useState("");
     const [settingCapacity, setSettingCapacity] = useState(false);
+    const [editingId, setEditingId] = useState(null);
 
     const [formData, setFormData] = useState({
         name: "",
         occasionType: "",
         occasionDate: "",
+        slot: "DAY",
         capacity: "",
         roomsForGuests: "",
         specialRequests: "",
@@ -81,7 +83,8 @@ export default function ManageClubhouse() {
         if (!formData.name.trim()) newErrors.name = "Name is required";
         if (!formData.occasionType.trim()) newErrors.occasionType = "Occasion type is required";
         if (!formData.occasionDate) newErrors.occasionDate = "Date is required";
-        if (!formData.flatId) newErrors.flatId = "Flat selection is required";
+        if (!formData.slot) newErrors.slot = "Please select a slot";
+        if (!editingId && !formData.flatId) newErrors.flatId = "Flat selection is required";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -92,11 +95,29 @@ export default function ManageClubhouse() {
             name: "",
             occasionType: "",
             occasionDate: "",
+            slot: "DAY",
             capacity: "",
             roomsForGuests: "",
             specialRequests: "",
             flatId: ""
         });
+        setErrors({});
+        setEditingId(null);
+    };
+
+    const handleEdit = (booking) => {
+        setFormData({
+            name: booking.name || "",
+            occasionType: booking.occasionType || "",
+            occasionDate: booking.occasionDate || "",
+            slot: booking.slot || "DAY",
+            capacity: booking.capacity || "",
+            roomsForGuests: booking.roomsForGuests || "",
+            specialRequests: booking.specialRequests || "",
+            flatId: booking.flatId || ""
+        });
+        setEditingId(booking.id);
+        setShowForm(true);
         setErrors({});
     };
 
@@ -106,8 +127,13 @@ export default function ManageClubhouse() {
 
         setSubmitting(true);
         try {
-            await axiosInstance.post("/admin/clubhouse", formData);
-            setSuccessMessage("Clubhouse booked successfully!");
+            if (editingId) {
+                await axiosInstance.put(`/admin/clubhouse/${editingId}`, formData);
+                setSuccessMessage("Booking updated successfully!");
+            } else {
+                await axiosInstance.post("/admin/clubhouse", formData);
+                setSuccessMessage("Clubhouse booked successfully!");
+            }
             resetForm();
             setShowForm(false);
             loadBookings();
@@ -175,6 +201,26 @@ export default function ManageClubhouse() {
                 </div>
             </div>
 
+            {/* Summary Stats */}
+            <div className="stats-row" style={{ marginBottom: '20px' }}>
+                <div className="mini-stat">
+                    <span className="mini-stat-number">{bookings.length}</span>
+                    <span className="mini-stat-label">Total Bookings</span>
+                </div>
+                <div className="mini-stat">
+                    <span className="mini-stat-number">{bookings.filter(b => b.status === 'PENDING').length}</span>
+                    <span className="mini-stat-label">Pending</span>
+                </div>
+                <div className="mini-stat">
+                    <span className="mini-stat-number">{bookings.filter(b => b.status === 'APPROVED').length}</span>
+                    <span className="mini-stat-label">Approved</span>
+                </div>
+                <div className="mini-stat">
+                    <span className="mini-stat-number">{bookings.filter(b => b.status === 'REJECTED').length}</span>
+                    <span className="mini-stat-label">Rejected</span>
+                </div>
+            </div>
+
             {successMessage && <div className="success-message">{successMessage}</div>}
 
             {showForm && (
@@ -185,8 +231,8 @@ export default function ManageClubhouse() {
                             <span>🏛️</span>
                         </div>
                         <div>
-                            <h3>Admin Booking</h3>
-                            <p>Book the clubhouse (e.g. for a community event)</p>
+                            <h3>{editingId ? '✏️ Edit Booking' : 'Admin Booking'}</h3>
+                            <p>{editingId ? 'Update the details for this booking' : 'Book the clubhouse (e.g. for a community event)'}</p>
                         </div>
                     </div>
                     <div className="inline-form-body">
@@ -243,19 +289,31 @@ export default function ManageClubhouse() {
                                     />
                                     {errors.occasionDate && <span className="inline-form-error">{errors.occasionDate}</span>}
                                 </div>
-                                <div className="inline-form-group">
-                                    <label>Capacity</label>
-                                    <input
-                                        type="number"
-                                        className="inline-form-input"
-                                        placeholder="Expected attendees"
-                                        value={formData.capacity}
-                                        onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                                    />
+                                <div className={`inline-form-group ${errors.slot ? 'has-error' : ''}`}>
+                                    <label>Time Slot <span className="required-star">*</span></label>
+                                    <select
+                                        className={`inline-form-select ${errors.slot ? 'error' : ''}`}
+                                        value={formData.slot}
+                                        onChange={(e) => setFormData({ ...formData, slot: e.target.value })}
+                                    >
+                                        <option value="DAY">🌤️ Day (Morning – Afternoon)</option>
+                                        <option value="NIGHT">🌙 Night (Evening – Late Night)</option>
+                                    </select>
+                                    {errors.slot && <span className="inline-form-error">{errors.slot}</span>}
                                 </div>
                             </div>
 
                             <div className="inline-form-row">
+                                <div className="inline-form-group">
+                                    <label>Expected Capacity</label>
+                                    <input
+                                        type="number"
+                                        className="inline-form-input"
+                                        placeholder="Number of attendees"
+                                        value={formData.capacity}
+                                        onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                                    />
+                                </div>
                                 <div className="inline-form-group">
                                     <label>Rooms For Guests</label>
                                     <input
@@ -266,6 +324,9 @@ export default function ManageClubhouse() {
                                         onChange={(e) => setFormData({ ...formData, roomsForGuests: e.target.value })}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="inline-form-row">
                                 <div className="inline-form-group">
                                     <label>Special Requests</label>
                                     <input
@@ -276,6 +337,7 @@ export default function ManageClubhouse() {
                                         onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
                                     />
                                 </div>
+                                <div className="inline-form-group"></div>
                             </div>
 
                             <div className="inline-form-actions">
@@ -301,6 +363,7 @@ export default function ManageClubhouse() {
                                 <th>Name / Flat</th>
                                 <th>Occasion</th>
                                 <th>Date</th>
+                                <th>Slot</th>
                                 <th>Capacity</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -324,10 +387,16 @@ export default function ManageClubhouse() {
                                             {booking.specialRequests && <div className="text-muted text-sm">Notes: {booking.specialRequests}</div>}
                                         </td>
                                         <td>{booking.occasionDate}</td>
+                                        <td>
+                                            {booking.slot === 'DAY'
+                                                ? <span className="badge" style={{ background: '#fef9c3', color: '#854d0e' }}>🌤️ Day</span>
+                                                : <span className="badge" style={{ background: '#ede9fe', color: '#5b21b6' }}>🌙 Night</span>}
+                                        </td>
                                         <td>{booking.capacity || 'N/A'} {booking.roomsForGuests ? `(+${booking.roomsForGuests} rooms)` : ''}</td>
                                         <td>{getStatusBadge(booking.status)}</td>
                                         <td>
                                             <div className="action-group">
+                                                <button className="btn btn-warning btn-sm" onClick={() => handleEdit(booking)}>✏️ Edit</button>
                                                 {booking.status === 'PENDING' && (
                                                     <>
                                                         <button className="btn btn-success btn-sm" onClick={() => updateStatus(booking.id, 'APPROVED')}>Approve</button>

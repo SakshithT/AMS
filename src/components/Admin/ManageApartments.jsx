@@ -5,6 +5,7 @@ import "./AdminShared.css";
 export default function ManageApartments({ apartments, blocks, flats, loadApartments, loadBlocks, loadFlats }) {
   const [activeTab, setActiveTab] = useState("apartments");
   const [editingId, setEditingId] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const [flatFilterStatus, setFlatFilterStatus] = useState("ALL");
   const [aptData, setAptData] = useState({ name: "", address: "" });
@@ -13,6 +14,7 @@ export default function ManageApartments({ apartments, blocks, flats, loadApartm
 
   const resetForms = () => {
     setEditingId(null);
+    setShowCreateForm(false);
     setAptData({ name: "", address: "" });
     setBlockData({ apartmentId: "", blockName: "" });
     setFlatData({ blockId: "", flatNumber: "", type: "", floorNumber: "", status: "AVAILABLE" });
@@ -22,6 +24,27 @@ export default function ManageApartments({ apartments, blocks, flats, loadApartm
     setActiveTab(tab);
     resetForms();
     setFlatFilterStatus("ALL");
+  };
+
+  const handleEditStart = (type, item) => {
+    setShowCreateForm(true);
+    if (type === "apartment") {
+      setAptData({ name: item.name, address: item.address });
+    } else if (type === "block") {
+      setBlockData({
+        apartmentId: item.apartmentId || (item.apartment ? item.apartment.id : ""),
+        blockName: item.blockName
+      });
+    } else if (type === "flat") {
+      setFlatData({
+        blockId: item.blockId || (item.block ? item.block.id : ""),
+        flatNumber: item.flatNumber,
+        type: item.type,
+        floorNumber: item.floorNumber,
+        status: item.status
+      });
+    }
+    setEditingId(item.id);
   };
 
   // --- APARTMENTS ---
@@ -37,26 +60,16 @@ export default function ManageApartments({ apartments, blocks, flats, loadApartm
       loadApartments();
       resetForms();
     } catch (error) {
-      console.error(error);
       alert(error.response?.data?.message || "Operation failed.");
     }
-  };
-
-  const handleEditApartment = (apt) => {
-    setAptData({ name: apt.name, address: apt.address });
-    setEditingId(apt.id);
   };
 
   const handleDeleteApartment = async (id) => {
     if (!window.confirm("Delete this apartment? This will delete all associated blocks and flats.")) return;
     try {
       await axiosInstance.delete(`/apartments/${id}`);
-      loadApartments();
-      loadBlocks();
-      loadFlats();
-    } catch (error) {
-      alert("Failed to delete apartment");
-    }
+      loadApartments(); loadBlocks(); loadFlats();
+    } catch { alert("Failed to delete apartment"); }
   };
 
   // --- BLOCKS ---
@@ -72,39 +85,22 @@ export default function ManageApartments({ apartments, blocks, flats, loadApartm
       loadBlocks();
       resetForms();
     } catch (error) {
-      console.error(error);
       alert(error.response?.data?.message || "Operation failed.");
     }
-  };
-
-  const handleEditBlock = (block) => {
-    setBlockData({
-      apartmentId: block.apartmentId || (block.apartment ? block.apartment.id : ""),
-      blockName: block.blockName
-    });
-    setEditingId(block.id);
   };
 
   const handleDeleteBlock = async (id) => {
     if (!window.confirm("Delete this block?")) return;
     try {
       await axiosInstance.delete(`/blocks/${id}`);
-      loadBlocks();
-      loadFlats();
-    } catch (error) {
-      alert("Failed to delete block");
-    }
+      loadBlocks(); loadFlats();
+    } catch { alert("Failed to delete block"); }
   };
 
   // --- FLATS ---
   const handleSubmitFlat = async () => {
     try {
-      const payload = {
-        ...flatData,
-        blockId: Number(flatData.blockId),
-        floorNumber: Number(flatData.floorNumber)
-      };
-
+      const payload = { ...flatData, blockId: Number(flatData.blockId), floorNumber: Number(flatData.floorNumber) };
       if (editingId) {
         await axiosInstance.put(`/flats/${editingId}`, payload);
         alert("Flat updated successfully");
@@ -114,21 +110,7 @@ export default function ManageApartments({ apartments, blocks, flats, loadApartm
       }
       loadFlats();
       resetForms();
-    } catch (error) {
-      console.error("Flat error:", error.response?.data);
-      alert("Failed to save flat");
-    }
-  };
-
-  const handleEditFlat = (flat) => {
-    setFlatData({
-      blockId: flat.blockId || (flat.block ? flat.block.id : ""),
-      flatNumber: flat.flatNumber,
-      type: flat.type,
-      floorNumber: flat.floorNumber,
-      status: flat.status
-    });
-    setEditingId(flat.id);
+    } catch { alert("Failed to save flat"); }
   };
 
   const handleDeleteFlat = async (id) => {
@@ -136,56 +118,70 @@ export default function ManageApartments({ apartments, blocks, flats, loadApartm
     try {
       await axiosInstance.delete(`/flats/${id}`);
       loadFlats();
-    } catch (error) {
-      alert("Failed to delete flat");
-    }
+    } catch { alert("Failed to delete flat"); }
   };
+
+  const createLabel = { apartments: "Create Apartment", blocks: "Create Block", flats: "Create Flat" };
 
   return (
     <div className="admin-card fade-in-up">
+
+      {/* Tab buttons */}
       <div className="action-group tab-container mb-24">
         <button className={`btn ${activeTab === "apartments" ? "btn-primary" : "btn-secondary"}`} onClick={() => handleTabChange("apartments")}>Apartments</button>
         <button className={`btn ${activeTab === "blocks" ? "btn-primary" : "btn-secondary"}`} onClick={() => handleTabChange("blocks")}>Blocks</button>
         <button className={`btn ${activeTab === "flats" ? "btn-primary" : "btn-secondary"}`} onClick={() => handleTabChange("flats")}>Flats</button>
+
+        {/* Create toggle button — right side */}
+        <div style={{ marginLeft: "auto" }}>
+          <button
+            className={`btn ${showCreateForm ? "btn-secondary" : "btn-primary"}`}
+            onClick={() => { if (showCreateForm) resetForms(); else setShowCreateForm(true); }}
+          >
+            {showCreateForm ? "✕ Close Form" : `+ ${createLabel[activeTab]}`}
+          </button>
+        </div>
       </div>
 
+      {/* ── APARTMENTS TAB ── */}
       {activeTab === "apartments" && (
         <div>
-          <div className="inline-form-card fade-in-up mb-24">
-            <div className="inline-form-header">
-              <div className="inline-form-icon"><span>🏢</span></div>
-              <div>
-                <h3>{editingId ? "Edit Apartment" : "Add New Apartment"}</h3>
-                <p>Enter apartment details below</p>
-              </div>
-            </div>
-            <div className="inline-form-body">
-              <div className="inline-form-row">
-                <div className="inline-form-group">
-                  <label>Apartment Name</label>
-                  <input className="inline-form-input" placeholder="e.g. Sunrise Towers" value={aptData.name} onChange={(e) => setAptData({ ...aptData, name: e.target.value })} />
-                </div>
-                <div className="inline-form-group">
-                  <label>Address</label>
-                  <input className="inline-form-input" placeholder="e.g. 123 Main St" value={aptData.address} onChange={(e) => setAptData({ ...aptData, address: e.target.value })} />
+          {showCreateForm && (
+            <div className="inline-form-card fade-in-up mb-24">
+              <div className="inline-form-accent accent-blue"></div>
+              <div className="inline-form-header">
+                <div className="inline-form-icon icon-blue"><span>🏢</span></div>
+                <div>
+                  <h3>{editingId ? "Edit Apartment" : "Add New Apartment"}</h3>
+                  <p>Enter apartment details below</p>
                 </div>
               </div>
-              <div className="inline-form-actions">
-                {editingId && <button className="inline-btn inline-btn-cancel" onClick={resetForms}>Cancel</button>}
-                <button className="inline-btn inline-btn-submit btn-gradient-blue" onClick={handleSubmitApartment}>{editingId ? "Update" : "Add Apartment"}</button>
+              <div className="inline-form-body">
+                <div className="inline-form-row">
+                  <div className="inline-form-group">
+                    <label>Apartment Name</label>
+                    <input className="inline-form-input" placeholder="e.g. Sunrise Towers" value={aptData.name} onChange={(e) => setAptData({ ...aptData, name: e.target.value })} />
+                  </div>
+                  <div className="inline-form-group">
+                    <label>Address</label>
+                    <input className="inline-form-input" placeholder="e.g. 123 Main St" value={aptData.address} onChange={(e) => setAptData({ ...aptData, address: e.target.value })} />
+                  </div>
+                </div>
+                <div className="inline-form-actions">
+                  <button className="inline-btn inline-btn-cancel" onClick={resetForms}>Cancel</button>
+                  <button className="inline-btn inline-btn-submit btn-gradient-blue" onClick={handleSubmitApartment}>{editingId ? "Update" : "Add Apartment"}</button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           <hr className="divider mb-24" />
           <ul className="data-list">
             {apartments.map((a) => (
               <li key={a.id} className="data-list-item">
-                <div>
-                  <strong>{a.name}</strong> - <span className="item-meta">{a.address}</span>
-                </div>
+                <div><strong>{a.name}</strong> - <span className="item-meta">{a.address}</span></div>
                 <div className="action-buttons">
-                  <button className="btn btn-warning" onClick={() => handleEditApartment(a)}>Edit</button>
-                  <button className="btn btn-danger" onClick={() => handleDeleteApartment(a.id)}>Delete</button>
+                  <button className="btn btn-warning btn-sm" onClick={() => handleEditStart("apartment", a)}>Edit</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDeleteApartment(a.id)}>Delete</button>
                 </div>
               </li>
             ))}
@@ -193,54 +189,54 @@ export default function ManageApartments({ apartments, blocks, flats, loadApartm
         </div>
       )}
 
+      {/* ── BLOCKS TAB ── */}
       {activeTab === "blocks" && (
         <div>
-          <div className="inline-form-card fade-in-up mb-24">
-            <div className="inline-form-header">
-              <div className="inline-form-icon"><span>🏗️</span></div>
-              <div>
-                <h3>{editingId ? "Edit Block" : "Add New Block"}</h3>
-                <p>Create a block under an apartment</p>
-              </div>
-            </div>
-            <div className="inline-form-body">
-              <div className="inline-form-row">
-                <div className="inline-form-group">
-                  <label>Select Apartment</label>
-                  <select className="inline-form-select" value={blockData.apartmentId} onChange={(e) => setBlockData({ ...blockData, apartmentId: e.target.value })}>
-                    <option value="">-- Select Apartment --</option>
-                    {apartments.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-                  </select>
-                </div>
-                <div className="inline-form-group">
-                  <label>Block Name</label>
-                  <input className="inline-form-input" placeholder="e.g. Block A" value={blockData.blockName} onChange={(e) => setBlockData({ ...blockData, blockName: e.target.value })} />
+          {showCreateForm && (
+            <div className="inline-form-card fade-in-up mb-24">
+              <div className="inline-form-accent accent-orange"></div>
+              <div className="inline-form-header">
+                <div className="inline-form-icon icon-orange"><span>🏗️</span></div>
+                <div>
+                  <h3>{editingId ? "Edit Block" : "Add New Block"}</h3>
+                  <p>Create a block under an apartment</p>
                 </div>
               </div>
-              <div className="inline-form-actions">
-                {editingId && <button className="inline-btn inline-btn-cancel" onClick={resetForms}>Cancel</button>}
-                <button className="inline-btn inline-btn-submit btn-gradient-blue" onClick={handleSubmitBlock}>{editingId ? "Update" : "Add Block"}</button>
+              <div className="inline-form-body">
+                <div className="inline-form-row">
+                  <div className="inline-form-group">
+                    <label>Select Apartment</label>
+                    <select className="inline-form-select" value={blockData.apartmentId} onChange={(e) => setBlockData({ ...blockData, apartmentId: e.target.value })}>
+                      <option value="">-- Select Apartment --</option>
+                      {apartments.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="inline-form-group">
+                    <label>Block Name</label>
+                    <input className="inline-form-input" placeholder="e.g. Block A" value={blockData.blockName} onChange={(e) => setBlockData({ ...blockData, blockName: e.target.value })} />
+                  </div>
+                </div>
+                <div className="inline-form-actions">
+                  <button className="inline-btn inline-btn-cancel" onClick={resetForms}>Cancel</button>
+                  <button className="inline-btn inline-btn-submit btn-gradient-blue" onClick={handleSubmitBlock}>{editingId ? "Update" : "Add Block"}</button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           <hr className="divider mb-24" />
           <ul className="data-list">
             {blocks.map((b) => {
-              // Look up the matching apartment from the apartments prop array
               const aptId = b.apartmentId || b.apartment?.id;
               const apartmentName = apartments.find(a => a.id === aptId)?.name || b.apartment?.name || "Unknown Apartment";
-
               return (
                 <li key={b.id} className="data-list-item">
                   <div>
                     <strong>{b.blockName}</strong>
-                    <span className="item-meta" style={{ marginLeft: "10px" }}>
-                      (Apartment: {apartmentName})
-                    </span>
+                    <span className="item-meta" style={{ marginLeft: "10px" }}>(Apartment: {apartmentName})</span>
                   </div>
                   <div className="action-buttons">
-                    <button className="btn btn-warning" onClick={() => handleEditBlock(b)}>Edit</button>
-                    <button className="btn btn-danger" onClick={() => handleDeleteBlock(b.id)}>Delete</button>
+                    <button className="btn btn-warning btn-sm" onClick={() => handleEditStart("block", b)}>Edit</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleDeleteBlock(b.id)}>Delete</button>
                   </div>
                 </li>
               );
@@ -249,14 +245,16 @@ export default function ManageApartments({ apartments, blocks, flats, loadApartm
         </div>
       )}
 
-      {activeTab === "flats" && (
-        (() => {
-          const filteredFlats = flats.filter(f => flatFilterStatus === "ALL" || f.status === flatFilterStatus);
-          return (
-            <div>
+      {/* ── FLATS TAB ── */}
+      {activeTab === "flats" && (() => {
+        const filteredFlats = flats.filter(f => flatFilterStatus === "ALL" || f.status === flatFilterStatus);
+        return (
+          <div>
+            {showCreateForm && (
               <div className="inline-form-card fade-in-up mb-24">
+                <div className="inline-form-accent accent-green"></div>
                 <div className="inline-form-header">
-                  <div className="inline-form-icon"><span>🚪</span></div>
+                  <div className="inline-form-icon icon-green"><span>🚪</span></div>
                   <div>
                     <h3>{editingId ? "Edit Flat Status" : "Add New Flat"}</h3>
                     <p>Register a new flat unit</p>
@@ -304,69 +302,57 @@ export default function ManageApartments({ apartments, blocks, flats, loadApartm
                     <div className="inline-form-group"></div>
                   </div>
                   <div className="inline-form-actions">
-                    {editingId && <button className="inline-btn inline-btn-cancel" onClick={resetForms}>Cancel</button>}
+                    <button className="inline-btn inline-btn-cancel" onClick={resetForms}>Cancel</button>
                     <button className="inline-btn inline-btn-submit btn-gradient-blue" onClick={handleSubmitFlat}>{editingId ? "Update Status" : "Add Flat"}</button>
                   </div>
                 </div>
               </div>
-              <hr className="divider mb-24" />
-              <div className="section-header" style={{ marginBottom: '20px' }}>
-                <h3 className="section-title">Flats List ({filteredFlats.length})</h3>
-                <div className="filter-group">
-                  <label>Filter by Status:</label>
-                  <select
-                    className="form-select"
-                    value={flatFilterStatus}
-                    onChange={(e) => setFlatFilterStatus(e.target.value)}
-                    style={{ width: "auto" }}
-                  >
-                    <option value="ALL">All</option>
-                    <option value="AVAILABLE">Available</option>
-                    <option value="ALLOCATED">Allocated</option>
-                    <option value="UNDER_MAINTENANCE">Under Maintenance</option>
-                  </select>
-                </div>
+            )}
+            <hr className="divider mb-24" />
+            <div className="section-header" style={{ marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h3 className="section-title">Flats List ({filteredFlats.length})</h3>
+              <div className="filter-group">
+                <label>Filter by Status:</label>
+                <select className="form-select" value={flatFilterStatus} onChange={(e) => setFlatFilterStatus(e.target.value)} style={{ width: "auto" }}>
+                  <option value="ALL">All</option>
+                  <option value="AVAILABLE">Available</option>
+                  <option value="ALLOCATED">Allocated</option>
+                  <option value="UNDER_MAINTENANCE">Under Maintenance</option>
+                </select>
               </div>
-              <ul className="data-list">
-                {filteredFlats.length > 0 ? (
-                  filteredFlats.map((f) => {
-                    const blockId = f.blockId || f.block?.id;
-                    const blockObj = blocks.find(b => b.id === blockId);
-                    const blockName = blockObj?.blockName || f.block?.blockName || "Unknown Block";
-
-                    const aptId = blockObj?.apartmentId || blockObj?.apartment?.id;
-                    const aptName = apartments.find(a => a.id === aptId)?.name || blockObj?.apartment?.name || f.block?.apartment?.name || "Unknown Apartment";
-
-                    return (
-                      <li key={f.id} className="data-list-item">
-                        <div>
-                          <strong>Flat {f.flatNumber}</strong>
-                          <span className="item-meta"> (Floor: {f.floorNumber}, Type: {f.type})</span>
-                          <br />
-                          <span className="item-meta" style={{ display: "inline-block", marginTop: "5px", color: "#666" }}>
-                            Apartment: {aptName} | Block: {blockName}
-                          </span>
-                          <span className={`badge ${f.status === 'AVAILABLE' ? 'badge-active' : 'badge-neutral'} ml-10`}>
-                            {f.status}
-                          </span>
-                        </div>
-                        <div className="action-buttons">
-                          <button className="btn btn-warning" onClick={() => handleEditFlat(f)}>Edit</button>
-                          <button className="btn btn-danger" onClick={() => handleDeleteFlat(f.id)}>Delete</button>
-                        </div>
-                      </li>
-                    );
-                  })
-                ) : (
-                  <li className="data-list-item" style={{ justifyContent: 'center', color: 'var(--txt-3)' }}>
-                    No flats found with the selected status.
-                  </li>
-                )}
-              </ul>
             </div>
-          );
-        })()
-      )}
+            <ul className="data-list">
+              {filteredFlats.length > 0 ? filteredFlats.map((f) => {
+                const blockId = f.blockId || f.block?.id;
+                const blockObj = blocks.find(b => b.id === blockId);
+                const blockName = blockObj?.blockName || f.block?.blockName || "Unknown Block";
+                const aptId = blockObj?.apartmentId || blockObj?.apartment?.id;
+                const aptName = apartments.find(a => a.id === aptId)?.name || blockObj?.apartment?.name || f.block?.apartment?.name || "Unknown Apartment";
+                return (
+                  <li key={f.id} className="data-list-item">
+                    <div>
+                      <strong>Flat {f.flatNumber}</strong>
+                      <span className="item-meta"> (Floor: {f.floorNumber}, Type: {f.type})</span><br />
+                      <span className="item-meta" style={{ display: "inline-block", marginTop: "5px", color: "#666" }}>
+                        Apartment: {aptName} | Block: {blockName}
+                      </span>
+                      <span className={`badge ${f.status === "AVAILABLE" ? "badge-active" : "badge-neutral"} ml-10`}>{f.status}</span>
+                    </div>
+                    <div className="action-buttons">
+                      <button className="btn btn-warning btn-sm" onClick={() => handleEditStart("flat", f)}>Edit</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteFlat(f.id)}>Delete</button>
+                    </div>
+                  </li>
+                );
+              }) : (
+                <li className="data-list-item" style={{ justifyContent: "center", color: "var(--txt-3)" }}>
+                  No flats found with the selected status.
+                </li>
+              )}
+            </ul>
+          </div>
+        );
+      })()}
     </div>
   );
 }

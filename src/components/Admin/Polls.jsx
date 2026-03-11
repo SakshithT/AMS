@@ -122,6 +122,26 @@ export default function ManagePolls() {
                 </button>
             </div>
 
+            {/* Summary Stats */}
+            <div className="stats-row" style={{ marginBottom: '20px' }}>
+                <div className="mini-stat">
+                    <span className="mini-stat-number">{polls.length}</span>
+                    <span className="mini-stat-label">Total Polls</span>
+                </div>
+                <div className="mini-stat">
+                    <span className="mini-stat-number">{polls.filter(p => p.status === 'ACTIVE' && new Date(p.endDate) >= new Date()).length}</span>
+                    <span className="mini-stat-label">Active</span>
+                </div>
+                <div className="mini-stat">
+                    <span className="mini-stat-number">{polls.filter(p => p.status !== 'ACTIVE' || new Date(p.endDate) < new Date()).length}</span>
+                    <span className="mini-stat-label">Closed</span>
+                </div>
+                <div className="mini-stat">
+                    <span className="mini-stat-number">{polls.reduce((sum, p) => sum + (p.options?.reduce((s, o) => s + (o.voteCount || 0), 0) || 0), 0)}</span>
+                    <span className="mini-stat-label">Total Votes</span>
+                </div>
+            </div>
+
             {successMessage && <div className="success-message">{successMessage}</div>}
 
             {showForm && (

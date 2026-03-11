@@ -13,6 +13,7 @@ export default function ClubhouseBookings() {
         name: "",
         occasionType: "",
         occasionDate: "",
+        slot: "DAY",
         capacity: "",
         roomsForGuests: "",
         specialRequests: ""
@@ -38,6 +39,7 @@ export default function ClubhouseBookings() {
         if (!formData.name.trim()) newErrors.name = "Name is required";
         if (!formData.occasionType.trim()) newErrors.occasionType = "Occasion type is required";
         if (!formData.occasionDate) newErrors.occasionDate = "Date is required";
+        if (!formData.slot) newErrors.slot = "Please select a slot (Day or Night)";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -48,6 +50,7 @@ export default function ClubhouseBookings() {
             name: "",
             occasionType: "",
             occasionDate: "",
+            slot: "DAY",
             capacity: "",
             roomsForGuests: "",
             specialRequests: ""
@@ -147,6 +150,21 @@ export default function ClubhouseBookings() {
                                     />
                                     {errors.occasionDate && <span className="inline-form-error">{errors.occasionDate}</span>}
                                 </div>
+                                <div className={`inline-form-group ${errors.slot ? 'has-error' : ''}`}>
+                                    <label>Time Slot <span className="required-star">*</span></label>
+                                    <select
+                                        className={`inline-form-select ${errors.slot ? 'error' : ''}`}
+                                        value={formData.slot}
+                                        onChange={(e) => setFormData({ ...formData, slot: e.target.value })}
+                                    >
+                                        <option value="DAY">🌤️ Day (Morning – Afternoon)</option>
+                                        <option value="NIGHT">🌙 Night (Evening – Late Night)</option>
+                                    </select>
+                                    {errors.slot && <span className="inline-form-error">{errors.slot}</span>}
+                                </div>
+                            </div>
+
+                            <div className="inline-form-row">
                                 <div className="inline-form-group">
                                     <label>Expected Capacity</label>
                                     <input
@@ -157,9 +175,6 @@ export default function ClubhouseBookings() {
                                         onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                                     />
                                 </div>
-                            </div>
-
-                            <div className="inline-form-row">
                                 <div className="inline-form-group">
                                     <label>Rooms For Guests</label>
                                     <input
@@ -168,16 +183,6 @@ export default function ClubhouseBookings() {
                                         placeholder="Number of rooms needed"
                                         value={formData.roomsForGuests}
                                         onChange={(e) => setFormData({ ...formData, roomsForGuests: e.target.value })}
-                                    />
-                                </div>
-                                <div className="inline-form-group">
-                                    <label>Special Requests</label>
-                                    <input
-                                        type="text"
-                                        className="inline-form-input"
-                                        placeholder="Any special notes or requests"
-                                        value={formData.specialRequests}
-                                        onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
                                     />
                                 </div>
                             </div>
@@ -203,6 +208,7 @@ export default function ClubhouseBookings() {
                             <tr>
                                 <th>Occasion</th>
                                 <th>Date</th>
+                                <th>Slot</th>
                                 <th>Capacity</th>
                                 <th>Rooms</th>
                                 <th>Notes</th>
@@ -212,13 +218,18 @@ export default function ClubhouseBookings() {
                         <tbody>
                             {bookings.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="text-center">You haven't made any bookings yet</td>
+                                    <td colSpan="7" className="text-center">You haven't made any bookings yet</td>
                                 </tr>
                             ) : (
                                 bookings.map((booking) => (
                                     <tr key={booking.id}>
                                         <td><strong>{booking.occasionType}</strong></td>
                                         <td>{booking.occasionDate}</td>
+                                        <td>
+                                            {booking.slot === 'DAY'
+                                                ? <span className="badge" style={{ background: '#fef9c3', color: '#854d0e' }}>🌤️ Day</span>
+                                                : <span className="badge" style={{ background: '#ede9fe', color: '#5b21b6' }}>🌙 Night</span>}
+                                        </td>
                                         <td>{booking.capacity || 'N/A'}</td>
                                         <td>{booking.roomsForGuests || 'None'}</td>
                                         <td>{booking.specialRequests || '-'}</td>

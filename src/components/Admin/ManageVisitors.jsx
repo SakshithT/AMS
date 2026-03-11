@@ -46,12 +46,59 @@ export default function ManageVisitors() {
         return new Date(dateString).toLocaleString();
     };
 
+    // Calculate Summaries
+    const { todayCount, todayCheckedIn, recentDays } = React.useMemo(() => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        let tCount = 0;
+        let tCheckedIn = 0;
+        const map = {};
+
+        visitors.forEach(v => {
+            if (!v.entryTime) return;
+            const dateStr = v.entryTime.split('T')[0];
+            if (dateStr === todayStr) {
+                tCount++;
+                if (v.status === 'CHECKED_IN') tCheckedIn++;
+            }
+            map[dateStr] = (map[dateStr] || 0) + 1;
+        });
+
+        const recent = Object.keys(map).sort((a, b) => new Date(b) - new Date(a)).slice(0, 7).map(d => ({
+            date: d,
+            count: map[d]
+        }));
+
+        return { todayCount: tCount, todayCheckedIn: tCheckedIn, recentDays: recent };
+    }, [visitors]);
+
     return (
         <div className="fade-in-up">
             <div className="page-header page-header-container">
                 <div>
                     <h1 className="page-title">Monitor Visitors & Vehicles</h1>
                     <p className="page-subtitle">View visitor history and vehicle tracking</p>
+                </div>
+            </div>
+
+            <div className="admin-card mt-0" style={{ marginBottom: '20px', padding: '20px' }}>
+                <h3 style={{ marginBottom: '15px', color: 'var(--txt)' }}>Visitor Summaries</h3>
+                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '200px', background: 'var(--surface-2)', padding: '15px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                        <h4 style={{ margin: '0 0 10px 0', color: 'var(--txt-2)' }}>Today's Summary</h4>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--p)' }}>{todayCount} <span style={{ fontSize: '14px', fontWeight: 'normal', color: 'var(--txt-3)' }}>Visitors Today</span></div>
+                        <div style={{ marginTop: '5px', fontSize: '14px', color: 'var(--txt-2)' }}>Currently Checked-In: <strong>{todayCheckedIn}</strong></div>
+                    </div>
+                    <div style={{ flex: 2, minWidth: '300px', background: 'var(--surface-2)', padding: '15px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                        <h4 style={{ margin: '0 0 10px 0', color: 'var(--txt-2)' }}>Day Wise Summary (Last 7 Active Days)</h4>
+                        <div style={{ display: 'flex', gap: '15px', overflowX: 'auto', paddingBottom: '5px' }}>
+                            {recentDays.length > 0 ? recentDays.map(day => (
+                                <div key={day.date} style={{ minWidth: '80px', textAlign: 'center', background: 'var(--surface)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-2)' }}>
+                                    <div style={{ fontSize: '12px', color: 'var(--txt-3)', marginBottom: '4px' }}>{new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
+                                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--txt)' }}>{day.count}</div>
+                                </div>
+                            )) : <div style={{ fontSize: '14px', color: 'var(--txt-3)' }}>No visitor history available</div>}
+                        </div>
+                    </div>
                 </div>
             </div>
 
