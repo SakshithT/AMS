@@ -38,8 +38,10 @@ public class UserServiceImpl implements UserService {
     private final FlatRepository flatRepository;
 
     @Override
-    public void createUser(CreateUserRequest request) {
-
+    public User createUser(CreateUserRequest request) {
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new RuntimeException("Username already exists");
+        }
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
@@ -49,50 +51,41 @@ public class UserServiceImpl implements UserService {
         user.setEmail(request.getEmail());
         user.setContactNumber(request.getContactNumber());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-
         user.setRole(request.getRole());
         user.setStatus(UserStatus.APPROVED);
 
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
     @Override
     @Transactional
     public List<UserResponse> getPendingUsers() {
-
-        List<User> users = userRepository.findByStatus(UserStatus.PENDING);
-
-        return users.stream()
+        return userRepository.findByStatus(UserStatus.PENDING)
+                .stream()
                 .map(this::mapToUserResponse)
                 .toList();
     }
 
     @Override
     public void approveUser(Long userId) {
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
         user.setStatus(UserStatus.APPROVED);
         userRepository.save(user);
     }
 
     @Override
     public void rejectUser(Long userId) {
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
         user.setStatus(UserStatus.REJECTED);
         userRepository.save(user);
     }
 
+    @Override
     public User getLoggedInUser() {
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
         return userDetails.getUser();
     }
 
@@ -105,46 +98,40 @@ public class UserServiceImpl implements UserService {
         return mapToUserResponse(user);
     }
 
-    // ==========================================
-    // ✅ GET ALL USERS (Manage Users Page)
-    // ==========================================
     @Override
     @Transactional
     public List<UserResponse> getAllUsers() {
-
-        List<User> users = userRepository.findAll();
-
-        return users.stream()
+        return userRepository.findAll()
+                .stream()
                 .map(this::mapToUserResponse)
                 .toList();
     }
 
-    // ==========================================
-    // ✅ UPDATE USER (Admin Panel)
-    // ==========================================
     @Override
     public void updateUser(Long id, UpdateUserRequest request) {
-
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             user.setStatus(UserStatus.valueOf(request.getStatus()));
         }
-
         if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            if (!user.getUsername().equals(request.getUsername())
+                    && userRepository.findByUsername(request.getUsername()).isPresent()) {
+                throw new RuntimeException("Username already exists");
+            }
             user.setUsername(request.getUsername());
         }
-
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            if (!user.getEmail().equals(request.getEmail())
+                    && userRepository.findByEmail(request.getEmail()).isPresent()) {
+                throw new RuntimeException("Email already exists");
+            }
             user.setEmail(request.getEmail());
         }
-
         if (request.getContactNumber() != null && !request.getContactNumber().isBlank()) {
             user.setContactNumber(request.getContactNumber());
         }
-
-        // Update password only if provided
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
@@ -152,13 +139,9 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    // ==========================================
-    // ✅ DEACTIVATE USER
-    // ==========================================
     @Override
     @Transactional
     public void deactivateUser(Long id) {
-
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -166,21 +149,15 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("User already deactivated");
         }
 
-        // 1️⃣ Deactivate User
         user.setStatus(UserStatus.DEACTIVATED);
 
-        // 2️⃣ Find active allotment
         apartmentAllotmentRepository
                 .findByUserAndStatus(user, AllotmentStatus.ACTIVE)
                 .ifPresent(allotment -> {
-
-                    // 3️⃣ Update allotment
-                    allotment.setStatus(AllotmentStatus.INACTIVE);
+                    allotment.setStatus(AllotmentStatus.VACATED);
                     allotment.setEndDate(LocalDate.now());
-
                     apartmentAllotmentRepository.save(allotment);
 
-                    // 4️⃣ Update flat
                     Flat flat = allotment.getFlat();
                     if (flat != null) {
                         flat.setStatus(FlatStatus.AVAILABLE);
@@ -191,16 +168,11 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    // ==========================================
-    // ✅ GET USER BY USERNAME
-    // ==========================================
     @Override
     @Transactional
     public UserResponse getUserByUsername(String username) {
-
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
         return mapToUserResponse(user);
     }
 
@@ -212,23 +184,17 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    // ==========================================
-    // ✅ UPDATE PROFILE (Logged-in Admin)
-    // ==========================================
     @Override
     public void updateProfile(String username, UpdateUserRequest request) {
-
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (request.getUsername() != null && !request.getUsername().isBlank()) {
             user.setUsername(request.getUsername());
         }
-
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             user.setEmail(request.getEmail());
         }
-
         if (request.getContactNumber() != null && !request.getContactNumber().isBlank()) {
             user.setContactNumber(request.getContactNumber());
         }
@@ -241,19 +207,15 @@ public class UserServiceImpl implements UserService {
         String blockName = null;
 
         if (user.getAllotments() != null) {
-            String tempFlat = null;
-            String tempBlock = null;
             for (Allotment allotment : user.getAllotments()) {
                 if (allotment.getStatus() == AllotmentStatus.ACTIVE) {
-                    tempFlat = allotment.getFlat().getFlatNumber();
+                    flatNumber = allotment.getFlat().getFlatNumber();
                     if (allotment.getFlat().getBlock() != null) {
-                        tempBlock = allotment.getFlat().getBlock().getBlockName();
+                        blockName = allotment.getFlat().getBlock().getBlockName();
                     }
                     break;
                 }
             }
-            flatNumber = tempFlat;
-            blockName = tempBlock;
         }
 
         return new UserResponse(

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.arah.apartment_management_system.enums.BookingStatus;
+import com.arah.apartment_management_system.enums.ClubhouseSlot;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -37,6 +38,10 @@ public class ClubhouseBooking {
     @Column(nullable = false)
     private LocalDate occasionDate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ClubhouseSlot slot;
+
     private Integer capacity;
 
     private Integer roomsForGuests;
@@ -56,6 +61,8 @@ public class ClubhouseBooking {
         this.createdAt = LocalDateTime.now();
         if (this.status == null)
             this.status = BookingStatus.PENDING;
+        if (this.slot == null)
+            this.slot = ClubhouseSlot.DAY;
     }
 
     @PreUpdate
@@ -63,3 +70,4 @@ public class ClubhouseBooking {
         this.updatedAt = LocalDateTime.now();
     }
 }
+

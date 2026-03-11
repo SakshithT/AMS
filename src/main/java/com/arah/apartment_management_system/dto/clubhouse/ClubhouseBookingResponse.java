@@ -1,9 +1,10 @@
-package com.arah.apartment_management_system.dto;
+package com.arah.apartment_management_system.dto.clubhouse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.arah.apartment_management_system.enums.BookingStatus;
+import com.arah.apartment_management_system.enums.ClubhouseSlot;
 
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class ClubhouseBookingResponse {
     private String apartmentName;
     private String occasionType;
     private LocalDate occasionDate;
+    private ClubhouseSlot slot;
     private Integer capacity;
     private Integer roomsForGuests;
     private String specialRequests;

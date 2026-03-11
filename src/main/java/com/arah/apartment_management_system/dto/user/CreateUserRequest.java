@@ -10,26 +10,27 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateUserRequest {
-	
+
 	@NotBlank
-    private String username;
-	
+	private String username;
+
 	@Email
-    private String email;
-	
+	private String email;
+
 	@NotBlank
-    private String password;
-	
+	private String password;
+
 	private String contactNumber;
-	
+
 	private String designation;
-	
+
 	@NotNull
-    private Role role;
+	private Role role;
+
+	private Long flatId;
 }

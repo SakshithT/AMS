@@ -53,7 +53,7 @@ public class MaintenanceController {
     public ApiResponse<String> updateMaintenance(
             @PathVariable Long id,
             @RequestBody UpdateMaintenanceRequest request) {
-        maintenanceService.updateMaintenance(id, request.getAmount());
+        maintenanceService.updateMaintenance(id, request.getAmount(), request.getMonth(), request.getYear());
         return ApiResponse.success("Maintenance updated", null);
     }
 

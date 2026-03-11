@@ -12,6 +12,8 @@ import com.arah.apartment_management_system.service.AllotmentService;
 import com.arah.apartment_management_system.service.UserService;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,13 +36,14 @@ public class AllotmentServiceImpl implements AllotmentService {
         Allotment allotment = Allotment.builder()
                 .user(user)
                 .flat(flat)
-                .startDate(request.getStartDate())
+                .startDate(request.getStartDate() != null ? request.getStartDate() : LocalDate.now())
                 .status(AllotmentStatus.ACTIVE)
                 .build();
 
         return mapToDTO(allotmentRepository.save(allotment));
     }
 
+    @Override
     public AllotmentResponseDTO getMyAllotment() {
 
         User user = userService.getLoggedInUser();
@@ -58,9 +61,9 @@ public class AllotmentServiceImpl implements AllotmentService {
     @Override
     public void vacateFlat(Long allotmentId) {
 
-        Allotment allotment = 
+        Allotment allotment =
             allotmentRepository.findById(allotmentId)
-                .orElseThrow(() -> 
+                .orElseThrow(() ->
                     new ResourceNotFoundException("Allotment not found"));
 
         allotment.setStatus(AllotmentStatus.VACATED);
@@ -69,12 +72,28 @@ public class AllotmentServiceImpl implements AllotmentService {
         allotmentRepository.save(allotment);
     }
 
+    @Override
+    public List<AllotmentResponseDTO> getAllotmentHistory() {
+        return allotmentRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     private AllotmentResponseDTO mapToDTO(Allotment allotment) {
+        Flat flat = allotment.getFlat();
+        User user = allotment.getUser();
+        String blockName = flat.getBlock() != null ? flat.getBlock().getBlockName() : "";
         return new AllotmentResponseDTO(
                 allotment.getId(),
-                allotment.getUser().getId(),
-                allotment.getFlat().getId(),
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                flat.getId(),
+                flat.getFlatNumber(),
+                blockName,
                 allotment.getStartDate(),
+                allotment.getEndDate(),
                 allotment.getStatus().name()
         );
     }

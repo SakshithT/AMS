@@ -35,10 +35,6 @@ public class UserController {
     private final NoticeService noticeService;
     private final AdminService adminService;
 
-    // =============================================
-    // PROFILE
-    // =============================================
-
     @GetMapping("/profile")
     public ApiResponse<UserResponse> getMyProfile() {
         return ApiResponse.success("Profile fetched successfully", userService.getLoggedInUserProfile());
@@ -51,27 +47,15 @@ public class UserController {
         return ApiResponse.success("Profile updated successfully", null);
     }
 
-    // =============================================
-    // FLAT (supports both /flat and legacy /my-flat)
-    // =============================================
-
     @GetMapping("/flat")
     public ApiResponse<FlatResponseDTO> getMyFlat() {
         return ApiResponse.success("Flat fetched successfully", flatService.getMyFlat());
     }
 
-    // =============================================
-    // MAINTENANCE (returns list of all records)
-    // =============================================
-
     @GetMapping("/maintenance")
     public ApiResponse<List<MaintenanceResponseDTO>> getMyMaintenance() {
         return ApiResponse.success("Maintenance fetched successfully", maintenanceService.getMyMaintenance());
     }
-
-    // =============================================
-    // NOTICES
-    // =============================================
 
     @GetMapping("/notices")
     public ApiResponse<List<Notice>> getNotices() {
@@ -91,10 +75,6 @@ public class UserController {
         noticeService.addNoticeResponse(id, request.getResponseText(), principal.getName());
         return ApiResponse.success("Response added successfully", null);
     }
-
-    // =============================================
-    // STAFF
-    // =============================================
 
     @GetMapping("/staff")
     public ApiResponse<List<StaffResponse>> getStaffList() {

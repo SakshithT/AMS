@@ -19,9 +19,6 @@ public class FacilityController {
 
     private final FacilityService facilityService;
 
-    // =====================
-    // ADMIN endpoints
-    // =====================
 
     @PostMapping("/api/admin/facilities")
     @PreAuthorize("hasRole('ADMIN')")
@@ -57,9 +54,6 @@ public class FacilityController {
         return ApiResponse.success("Facility fetched successfully", facilityService.getFacilityById(id));
     }
 
-    // =====================
-    // RESIDENT endpoints
-    // =====================
 
     @GetMapping("/api/user/facilities")
     @PreAuthorize("hasRole('RESIDENT')")

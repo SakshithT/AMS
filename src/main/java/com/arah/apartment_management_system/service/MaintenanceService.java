@@ -22,7 +22,7 @@ public interface MaintenanceService {
 
     void createBill(Long flatId, Double amount, int month, int year);
 
-    void updateMaintenance(Long maintenanceId, Double amount);
+    void updateMaintenance(Long maintenanceId, Double amount, Integer month, Integer year);
 
     void deleteMaintenance(Long maintenanceId);
     

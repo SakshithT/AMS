@@ -7,6 +7,8 @@ import com.arah.apartment_management_system.util.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,5 +36,12 @@ public class AllotmentController {
 
         allotmentService.vacateFlat(id);
         return ApiResponse.success("Flat vacated successfully", null);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/history")
+    public ApiResponse<List<AllotmentResponseDTO>> getAllotmentHistory() {
+        return ApiResponse.success("History fetched successfully",
+                allotmentService.getAllotmentHistory());
     }
 }

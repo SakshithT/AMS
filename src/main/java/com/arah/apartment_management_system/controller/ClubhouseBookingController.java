@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.arah.apartment_management_system.dto.ClubhouseBookingRequest;
-import com.arah.apartment_management_system.dto.ClubhouseBookingResponse;
+import com.arah.apartment_management_system.dto.clubhouse.ClubhouseBookingRequest;
+import com.arah.apartment_management_system.dto.clubhouse.ClubhouseBookingResponse;
 import com.arah.apartment_management_system.enums.BookingStatus;
 import com.arah.apartment_management_system.service.ClubhouseBookingService;
 import com.arah.apartment_management_system.util.ApiResponse;
@@ -21,9 +21,6 @@ public class ClubhouseBookingController {
 
     private final ClubhouseBookingService clubhouseBookingService;
 
-    // =====================
-    // ADMIN endpoints
-    // =====================
 
     @GetMapping("/api/admin/clubhouse/capacity")
     @PreAuthorize("hasRole('ADMIN')")
@@ -70,9 +67,15 @@ public class ClubhouseBookingController {
         return ApiResponse.success("Booking deleted successfully", null);
     }
 
-    // =====================
-    // RESIDENT endpoints
-    // =====================
+    @PutMapping("/api/admin/clubhouse/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<ClubhouseBookingResponse> updateBooking(
+            @PathVariable Long id,
+            @Valid @RequestBody ClubhouseBookingRequest request) {
+        return ApiResponse.success("Booking updated successfully",
+                clubhouseBookingService.updateBooking(id, request));
+    }
+
 
     @GetMapping("/api/user/clubhouse")
     @PreAuthorize("hasRole('RESIDENT')")

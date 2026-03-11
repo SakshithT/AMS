@@ -84,12 +84,24 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         }
 
         @Override
-        public void updateMaintenance(Long maintenanceId, Double amount) {
+        public void updateMaintenance(Long maintenanceId, Double amount, Integer month, Integer year) {
 
                 Maintenance maintenance = maintenanceRepository.findById(maintenanceId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Maintenance not found"));
 
-                maintenance.setAmount(amount);
+                if (amount != null) {
+                        maintenance.setAmount(amount);
+                }
+                if (month != null) {
+                        maintenance.setMonth(month);
+                }
+                if (year != null) {
+                        maintenance.setYear(year);
+                }
+                // Recalculate due date if month or year changed
+                int updatedMonth = month != null ? month : maintenance.getMonth();
+                int updatedYear = year != null ? year : maintenance.getYear();
+                maintenance.setDueDate(LocalDate.of(updatedYear, updatedMonth, 1).plusDays(10));
 
                 maintenanceRepository.save(maintenance);
         }

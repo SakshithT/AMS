@@ -20,9 +20,6 @@ public class ComplaintController {
 
     private final ComplaintService complaintService;
 
-    // =====================
-    // ADMIN endpoints
-    // =====================
 
     @GetMapping("/api/admin/complaints")
     @PreAuthorize("hasRole('ADMIN')")
@@ -53,9 +50,6 @@ public class ComplaintController {
         return ApiResponse.success("Complaint deleted", null);
     }
 
-    // =====================
-    // RESIDENT (user) endpoints
-    // =====================
 
     @GetMapping("/api/user/complaints")
     @PreAuthorize("hasRole('RESIDENT')")

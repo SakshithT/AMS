@@ -15,8 +15,10 @@ import com.arah.apartment_management_system.dto.staff.StaffResponse;
 import com.arah.apartment_management_system.dto.user.CreateUserRequest;
 import com.arah.apartment_management_system.dto.user.UpdateUserRequest;
 import com.arah.apartment_management_system.dto.user.UserResponse;
+import com.arah.apartment_management_system.entity.User;
 import com.arah.apartment_management_system.entity.Vehicle;
 import com.arah.apartment_management_system.entity.Visitor;
+import com.arah.apartment_management_system.mapper.SecurityMapper;
 import com.arah.apartment_management_system.repository.VehicleRepository;
 import com.arah.apartment_management_system.repository.VisitorRepository;
 import com.arah.apartment_management_system.service.AdminService;
@@ -34,6 +36,7 @@ public class AdminController {
     private final AdminService adminService;
     private final VisitorRepository visitorRepository;
     private final VehicleRepository vehicleRepository;
+    private final SecurityMapper securityMapper;
 
     @GetMapping("/users")
     public ApiResponse<List<UserResponse>> getAllUsers() {
@@ -84,7 +87,11 @@ public class AdminController {
 
     @PostMapping("/users")
     public ApiResponse<String> createUser(@RequestBody CreateUserRequest request) {
-        userService.createUser(request);
+        User user = userService.createUser(request);
+        if (request.getFlatId() != null
+                && com.arah.apartment_management_system.enums.Role.ROLE_RESIDENT.equals(request.getRole())) {
+            adminService.allocateFlatToUser(user.getId(), request.getFlatId());
+        }
         return ApiResponse.success("User created successfully", null);
     }
 
@@ -150,17 +157,13 @@ public class AdminController {
         return ApiResponse.success("Staff deleted successfully", null);
     }
 
-    // ========================
-    // VISITORS & VEHICLES (ADMIN MONITORING)
-    // ========================
-
     @GetMapping("/visitors")
     public ApiResponse<List<VisitorDTO>> getAllVisitors() {
         List<VisitorDTO> visitors = visitorRepository.findAll()
                 .stream()
                 .sorted(Comparator.comparing(Visitor::getEntryTime,
                         Comparator.nullsLast(Comparator.reverseOrder())))
-                .map(this::toVisitorDTO)
+                .map(securityMapper::toVisitorDTO)
                 .collect(Collectors.toList());
         return ApiResponse.success("Visitors fetched", visitors);
     }
@@ -171,34 +174,8 @@ public class AdminController {
                 .stream()
                 .sorted(Comparator.comparing(Vehicle::getEntryTime,
                         Comparator.nullsLast(Comparator.reverseOrder())))
-                .map(this::toVehicleDTO)
+                .map(securityMapper::toVehicleDTO)
                 .collect(Collectors.toList());
         return ApiResponse.success("Vehicles fetched", vehicles);
-    }
-
-    private VisitorDTO toVisitorDTO(Visitor v) {
-        return VisitorDTO.builder()
-                .id(v.getId())
-                .name(v.getName())
-                .phone(v.getPhone())
-                .flatNumber(v.getFlatNumber())
-                .purpose(v.getPurpose())
-                .status(v.getStatus())
-                .entryTime(v.getEntryTime())
-                .exitTime(v.getExitTime())
-                .build();
-    }
-
-    private VehicleDTO toVehicleDTO(Vehicle v) {
-        return VehicleDTO.builder()
-                .id(v.getId())
-                .vehicleNumber(v.getVehicleNumber())
-                .vehicleType(v.getVehicleType())
-                .ownerName(v.getOwnerName())
-                .flatNumber(v.getFlatNumber())
-                .status(v.getStatus())
-                .entryTime(v.getEntryTime())
-                .exitTime(v.getExitTime())
-                .build();
     }
 }

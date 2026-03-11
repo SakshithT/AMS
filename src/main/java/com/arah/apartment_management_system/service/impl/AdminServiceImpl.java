@@ -44,6 +44,7 @@ public class AdminServiceImpl implements AdminService {
         Allotment allotment = new Allotment();
         allotment.setUser(user);
         allotment.setFlat(flat);
+        allotment.setStartDate(LocalDate.now());
         allotment.setStatus(AllotmentStatus.ACTIVE);
         flat.setStatus(FlatStatus.ALLOCATED);
         user.setStatus(UserStatus.APPROVED);
@@ -84,6 +85,14 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void createStaff(CreateStaffRequest request) {
 
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
+        }
+
         User staff = new User();
         staff.setUsername(request.getUsername());
         staff.setEmail(request.getEmail());
@@ -119,6 +128,16 @@ public class AdminServiceImpl implements AdminService {
 
         User staff = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+        if (!staff.getUsername().equals(request.getUsername())
+                && userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        if (!staff.getEmail().equals(request.getEmail())
+                && userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
+        }
 
         staff.setUsername(request.getUsername());
         staff.setEmail(request.getEmail());

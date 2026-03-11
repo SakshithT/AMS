@@ -9,32 +9,20 @@ import com.arah.apartment_management_system.entity.User;
 
 public interface UserService {
 
-    // ===============================
-    // 🔹 Create
-    // ===============================
-    void createUser(CreateUserRequest request);
+    User createUser(CreateUserRequest request);
 
-    // ===============================
-    // 🔹 Manage Users (Admin Panel)
-    // ===============================
     List<UserResponse> getAllUsers();
 
     void updateUser(Long id, UpdateUserRequest request);
 
     void deactivateUser(Long id);
 
-    // ===============================
-    // 🔹 Approval Flow
-    // ===============================
     List<UserResponse> getPendingUsers();
 
     void approveUser(Long userId);
 
     void rejectUser(Long userId);
 
-    // ===============================
-    // 🔹 Profile
-    // ===============================
     User getLoggedInUser();
 
     UserResponse getLoggedInUserProfile();
@@ -43,5 +31,5 @@ public interface UserService {
 
     void updateProfile(String username, UpdateUserRequest request);
 
-	public void reactivateUser(Long id);
+    void reactivateUser(Long id);
 }

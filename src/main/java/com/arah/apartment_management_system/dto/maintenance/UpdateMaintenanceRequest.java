@@ -7,4 +7,6 @@ import lombok.Setter;
 @Setter
 public class UpdateMaintenanceRequest {
     private Double amount;
+    private Integer month;
+    private Integer year;
 }
